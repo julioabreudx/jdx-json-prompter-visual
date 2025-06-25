@@ -1,0 +1,810 @@
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video & Image Prompt Builder to JSON</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for a more modern look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+        .form-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+        /* Simple spinner for loading state */
+        .spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+        #image-spinner {
+             width: 48px;
+             height: 48px;
+             border-width: 4px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .mode-btn.active {
+            background-color: #4f46e5;
+            color: white;
+        }
+        #json-output {
+            resize: none;
+            border: none;
+            outline: none;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+
+    <div class="container mx-auto p-4 sm:p-6">
+        <div class="text-center mb-8">
+            <h1 id="main-title" class="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-500 to-blue-500 text-transparent bg-clip-text">
+                Video & Image Prompt Builder to JSON
+            </h1>
+             <h2 class="text-gray-400">
+                Julio A. Deckes and Gemini
+            </h2>
+            <div class="mt-4 flex justify-center gap-4">
+                <div class="inline-flex rounded-lg bg-gray-800 p-1">
+                    <button id="videoModeBtn" class="mode-btn active px-4 py-2 text-sm font-semibold rounded-md transition-colors">Video</button>
+                    <button id="imageModeBtn" class="mode-btn px-4 py-2 text-sm font-semibold rounded-md transition-colors text-gray-400">Image</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Left Column: Input Form -->
+            <div id="form-panel" class="bg-gray-800 p-6 rounded-xl shadow-lg">
+                <h2 class="text-2xl font-semibold mb-6 text-gray-100 border-b border-gray-700 pb-3">Prompt Parameters</h2>
+                
+                <form id="prompt-form" class="space-y-6">
+                    <!-- Main Prompt -->
+                    <div>
+                        <label for="prompt" class="block mb-2 text-sm font-medium text-gray-300">Main Prompt</label>
+                        <div class="relative">
+                            <textarea id="prompt" rows="4" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-3 pr-28" placeholder="A cinematic wide shot of a futuristic cityscape at dusk..."></textarea>
+                            <button type="button" id="enhanceBtn" class="absolute top-1/2 right-3 -translate-y-1/2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2 px-3 rounded-md flex items-center gap-1">
+                                ✨ Enhance
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Time & Location -->
+                    <fieldset class="border border-gray-700 p-4 rounded-lg">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">Time & Location</legend>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div>
+                                <label for="timeOfDay" class="block mb-2 text-sm font-medium text-gray-300">Time of Day</label>
+                                <input type="text" id="timeOfDay" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3" placeholder="Dawn, Dusk, Midday, Sunset, Night">
+                            </div>
+                            <div>
+                                <label for="location" class="block mb-2 text-sm font-medium text-gray-300">Location</label>
+                                <input type="text" id="location" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3" placeholder="A bustling market in Marrakech">
+                            </div>
+                            <div>
+                                <label for="timePeriod" class="block mb-2 text-sm font-medium text-gray-300">Time Period</label>
+                                <select id="timePeriod" class="form-select w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3">
+                                    <option>Present</option>
+                                    <option>Past</option>
+                                    <option>Future</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="genre" class="block mb-2 text-sm font-medium text-gray-300">Genre</label>
+                                <select id="genre" class="form-select w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3">
+                                    <option>Realistic</option>
+                                    <option>Science Fiction</option>
+                                    <option>Dystopian</option>
+                                    <option>Fantasy</option>
+                                </select>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Characters -->
+                    <fieldset class="border border-gray-700 p-4 rounded-lg">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">Characters</legend>
+                        <div id="characters-container" class="space-y-4">
+                           <!-- Character fields will be injected here -->
+                        </div>
+                        <div class="mt-4 flex gap-3">
+                             <button type="button" id="addManualCharacterBtn" class="text-sm bg-gray-700 hover:bg-gray-600 text-gray-200 font-medium py-2 px-4 rounded-lg">+ Add Character</button>
+                             <button type="button" id="addAiCharacterBtn" class="text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg flex items-center gap-2">✨ Add AI Character</button>
+                        </div>
+                    </fieldset>
+
+                    <!-- Scene Details -->
+                    <fieldset class="border border-gray-700 p-4 rounded-lg">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">Scene Details</legend>
+                         <div class="mt-2 text-right">
+                            <button type="button" id="suggestSceneBtn" class="text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-3 rounded-md flex items-center gap-1 ml-auto">✨ Suggest Details</button>
+                        </div>
+                        <div class="mt-2">
+                            <label for="foregroundDetails" class="block mb-2 text-sm font-medium text-gray-300">Foreground Details</label>
+                            <textarea id="foregroundDetails" rows="2" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3" placeholder="e.g., Rain-slicked streets, a holographic ad flickering"></textarea>
+                        </div>
+                        <div class="mt-4">
+                            <label for="backgroundDetails" class="block mb-2 text-sm font-medium text-gray-300">Background Details</label>
+                            <textarea id="backgroundDetails" rows="2" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3" placeholder="e.g., Towering skyscrapers, flying vehicles in the distance"></textarea>
+                        </div>
+                    </fieldset>
+                    
+                    <!-- Core Parameters -->
+                    <fieldset class="border border-gray-700 p-4 rounded-lg">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">Core Parameters</legend>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                            <div>
+                                <label for="aspectRatio" class="block mb-2 text-sm font-medium text-gray-300">Aspect Ratio</label>
+                                <select id="aspectRatio" class="form-select w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3">
+                                    <option>16:9</option>
+                                    <option>9:16</option>
+                                    <option>1:1</option>
+                                    <option>4:3</option>
+                                    <option>2.39:1</option>
+                                </select>
+                            </div>
+                            <div id="duration-field" class="video-only-field">
+                                <label for="duration" class="block mb-2 text-sm font-medium text-gray-300">Duration</label>
+                                <input type="text" id="duration" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3" value="8s">
+                            </div>
+                            <div id="fps-field" class="video-only-field">
+                                <label for="fps" class="block mb-2 text-sm font-medium text-gray-300">FPS</label>
+                                <input type="number" id="fps" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3" value="24">
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Cinematography -->
+                    <fieldset class="border border-gray-700 p-4 rounded-lg">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">Cinematography</legend>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                             <div>
+                                <label for="shotSize" class="block mb-2 text-sm font-medium text-gray-300">Shot Size</label>
+                                <select id="shotSize" class="form-select w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3">
+                                    <option>extreme closeup</option>
+                                    <option>closeup</option>
+                                    <option>medium closeup</option>
+                                    <option>medium shot</option>
+                                    <option>medium full shot</option>
+                                    <option>full shot</option>
+                                    <option>wide shot</option>
+                                    <option>establishing shot</option>
+                                </select>
+                            </div>
+                             <div>
+                                <label for="cameraAngle" class="block mb-2 text-sm font-medium text-gray-300">Camera Angle</label>
+                                <select id="cameraAngle" class="form-select w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3">
+                                    <option>Low Angle</option>
+                                    <option>Eye Level</option>
+                                    <option>Shoulder Level</option>
+                                    <option>High Angle</option>
+                                    <option>Overhead / Bird's-eye view</option>
+                                    <option>Aerial</option>
+                                    <option>POV</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="camera-movement-field" class="mt-4 video-only-field">
+                            <label for="cameraMovement" class="block mb-2 text-sm font-medium text-gray-300">Camera Movement</label>
+                            <input type="text" id="cameraMovement" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3" placeholder="e.g., slow dolly zoom in">
+                        </div>
+                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div>
+                                <label for="lensType" class="block mb-2 text-sm font-medium text-gray-300">Lens Type</label>
+                                <input type="text" id="lensType" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3" placeholder="e.g., 35mm, 85mm anamorphic">
+                            </div>
+                             <div>
+                                <label for="focus" class="block mb-2 text-sm font-medium text-gray-300">Focus / Aperture</label>
+                                <input type="text" id="focus" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3" placeholder="e.g., shallow depth of field, f/1.8">
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Aesthetics -->
+                    <fieldset class="border border-gray-700 p-4 rounded-lg">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">Aesthetics</legend>
+                        <div class="mt-2 text-right">
+                            <button type="button" id="suggestAestheticsBtn" class="text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-3 rounded-md flex items-center gap-1 ml-auto">✨ Suggest Aesthetics</button>
+                        </div>
+                         <div class="mt-2">
+                             <label for="artisticStyle" class="block mb-2 text-sm font-medium text-gray-300">Artistic Style</label>
+                             <input type="text" id="artisticStyle" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3" placeholder="e.g., hyperrealistic, anime, watercolor">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div>
+                                <label for="mood" class="block mb-2 text-sm font-medium text-gray-300">Mood</label>
+                                <input type="text" id="mood" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3" placeholder="e.g., awe-inspiring, suspenseful">
+                            </div>
+                            <div>
+                                <label for="lighting" class="block mb-2 text-sm font-medium text-gray-300">Lighting</label>
+                                <input type="text" id="lighting" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3" placeholder="e.g., golden hour, neon glow, volumetric">
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                             <label for="colorPalette" class="block mb-2 text-sm font-medium text-gray-300">Color Palette</label>
+                             <input type="text" id="colorPalette" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3" placeholder="e.g., saturated pastels, monochromatic blue">
+                        </div>
+                         <div class="mt-4">
+                             <label for="vfx" class="block mb-2 text-sm font-medium text-gray-300">Visual Effects (VFX)</label>
+                             <input type="text" id="vfx" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3" placeholder="e.g., lens flare, light particles, film grain">
+                        </div>
+                    </fieldset>
+
+                    <!-- Audio -->
+                    <fieldset id="audio-fieldset" class="border border-gray-700 p-4 rounded-lg video-only-field">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">Audio</legend>
+                        <div class="space-y-4 mt-2">
+                             <div class="flex items-center">
+                                <input id="audioEnabled" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-900 border-gray-700 rounded focus:ring-blue-500" checked>
+                                <label for="audioEnabled" class="ml-2 text-sm font-medium text-gray-300">Audio Enabled</label>
+                            </div>
+                            <div id="audio-fields-container">
+                                 <div class="mt-4">
+                                    <label for="backgroundAudio" class="block mb-2 text-sm font-medium text-gray-300">Background Audio</label>
+                                    <input type="text" id="backgroundAudio" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3" placeholder="e.g., sound of rain, distant sirens">
+                                </div>
+                                 <div class="mt-4">
+                                    <label for="music" class="block mb-2 text-sm font-medium text-gray-300">Music</label>
+                                    <input type="text" id="music" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3" placeholder="e.g., tense synthwave track">
+                                </div>
+                                 <div class="flex items-center mt-4">
+                                    <input id="enableSubtitles" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-900 border-gray-700 rounded focus:ring-blue-500">
+                                    <label for="enableSubtitles" class="ml-2 text-sm font-medium text-gray-300">Enable Subtitles</label>
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                     <!-- Advanced Options -->
+                    <fieldset class="border border-gray-700 p-4 rounded-lg">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">Advanced</legend>
+                         <div class="mt-4">
+                            <label for="quality" class="block mb-2 text-sm font-medium text-gray-300">Quality</label>
+                            <input type="text" id="quality" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3" placeholder="e.g., 4K, photorealistic, high detail">
+                        </div>
+                         <div class="mt-4">
+                            <label for="negativePrompt" class="block mb-2 text-sm font-medium text-gray-300">Negative Prompt</label>
+                            <input type="text" id="negativePrompt" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3" placeholder="blurry, low-resolution, cartoonish">
+                        </div>
+                        <div class="mt-4">
+                             <label for="seed" class="block mb-2 text-sm font-medium text-gray-300">Seed</label>
+                             <input type="number" id="seed" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3" placeholder="42">
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+
+            <!-- Right Column: JSON Output -->
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg h-full flex flex-col">
+                <div class="flex justify-between items-center border-b border-gray-700 pb-3 mb-6">
+                    <h2 id="output-panel-title" class="text-2xl font-semibold text-gray-100">Generated / Editable JSON</h2>
+                </div>
+                <div id="json-output-wrapper" class="flex-grow bg-gray-900 rounded-lg p-4 overflow-auto">
+                    <textarea id="json-output" class="w-full h-full bg-gray-900 text-sm text-yellow-300 rounded-lg p-3 resize-none border-0 focus:ring-0"></textarea>
+                </div>
+                 <div class="mt-4 space-y-4">
+                     <div class="flex items-center gap-4">
+                         <button id="copyBtn" class="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-200 font-medium py-2 px-4 rounded-lg transition duration-300">Copy</button>
+                         <button id="loadJsonBtn" class="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-200 font-medium py-2 px-4 rounded-lg transition duration-300">Load</button>
+                         <input type="file" id="file-input" class="hidden" accept=".json">
+                     </div>
+                     <div class="flex items-center gap-2">
+                         <input type="text" id="fileNameInput" class="w-full bg-gray-900 border border-gray-700 text-white text-sm rounded-lg p-3" placeholder="prompt.json">
+                         <button id="saveJsonBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-300">Save</button>
+                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 text-center space-y-4">
+             <button id="generateImageBtn" class="w-full max-w-md bg-gradient-to-r from-teal-500 to-cyan-500 hover:opacity-90 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition duration-300 text-lg hidden">
+                ✨ Generate Image
+            </button>
+        </div>
+        
+        <!-- Image Result Section -->
+        <div id="image-result-container" class="mt-8 bg-gray-800 p-6 rounded-xl shadow-lg hidden">
+             <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-3">
+                 <h2 class="text-2xl font-semibold text-gray-100">Generated Image</h2>
+             </div>
+             <div id="image-output-wrapper" class="bg-gray-900 rounded-lg p-4 min-h-[300px] flex items-center justify-center">
+                    <div id="image-spinner" class="spinner hidden"></div>
+                    <img id="generated-image" class="hidden max-w-full max-h-full rounded-lg object-contain">
+                    <p id="image-placeholder" class="text-gray-500">Image will appear here after generation</p>
+                </div>
+        </div>
+    </div>
+    
+    <script>
+        // --- DOM Elements ---
+        const getEl = (id) => document.getElementById(id);
+        const dom = {
+            videoModeBtn: getEl('videoModeBtn'), imageModeBtn: getEl('imageModeBtn'),
+            mainTitle: getEl('main-title'), promptForm: getEl('prompt-form'), jsonOutput: getEl('json-output'),
+            generateImageBtn: getEl('generateImageBtn'), saveJsonBtn: getEl('saveJsonBtn'), loadJsonBtn: getEl('loadJsonBtn'),
+            fileInput: getEl('file-input'), copyBtn: getEl('copyBtn'), enhanceBtn: getEl('enhanceBtn'),
+            addManualCharacterBtn: getEl('addManualCharacterBtn'), addAiCharacterBtn: getEl('addAiCharacterBtn'),
+            suggestSceneBtn: getEl('suggestSceneBtn'), suggestAestheticsBtn: getEl('suggestAestheticsBtn'),
+            charactersContainer: getEl('characters-container'), audioFieldsContainer: getEl('audio-fields-container'),
+            imageResultContainer: getEl('image-result-container'), imageSpinner: getEl('image-spinner'),
+            generatedImage: getEl('generated-image'), imagePlaceholder: getEl('image-placeholder'),
+            fileNameInput: getEl('fileNameInput'),
+            prompt: getEl('prompt'), timeOfDay: getEl('timeOfDay'), location: getEl('location'),
+            timePeriod: getEl('timePeriod'), genre: getEl('genre'), foregroundDetails: getEl('foregroundDetails'),
+            backgroundDetails: getEl('backgroundDetails'), aspectRatio: getEl('aspectRatio'), duration: getEl('duration'),
+            fps: getEl('fps'), shotSize: getEl('shotSize'), cameraAngle: getEl('cameraAngle'),
+            cameraMovement: getEl('cameraMovement'), lensType: getEl('lensType'), focus: getEl('focus'),
+            artisticStyle: getEl('artisticStyle'), mood: getEl('mood'), lighting: getEl('lighting'),
+            colorPalette: getEl('colorPalette'), vfx: getEl('vfx'), audioEnabled: getEl('audioEnabled'),
+            backgroundAudio: getEl('backgroundAudio'), music: getEl('music'), enableSubtitles: getEl('enableSubtitles'),
+            quality: getEl('quality'), negativePrompt: getEl('negativePrompt'), seed: getEl('seed'),
+        };
+
+        // --- State ---
+        let generationMode = 'video';
+
+        // --- Gemini API Configuration ---
+        const apiKey = "AIzaSyDNirJfpFeCV1oKlx7Hqy1dCf6634DXdlM"; // IMPORTANT: Add your API key here to run outside Gemini
+        const textApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+        const imageApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+
+        // --- Helper Functions ---
+        const getValue = (el) => el?.value.trim() || null;
+        const getNumberValue = (el) => el?.value ? parseInt(el.value, 10) : null;
+        const getCheckboxValue = (el) => el?.checked;
+        const setFieldValue = (el, value) => {
+            if(el) {
+                if (el.type === 'checkbox') el.checked = !!value;
+                else el.value = value || '';
+            }
+        };
+
+        const showLoading = (button) => {
+            button.disabled = true;
+            button.dataset.originalText = button.innerHTML;
+            button.innerHTML = '<div class="spinner mx-auto"></div>';
+        };
+
+        const hideLoading = (button) => {
+            button.disabled = false;
+            button.innerHTML = button.dataset.originalText || 'Button';
+        };
+        
+        // --- UI Interaction Functions ---
+        const setGenerationMode = (newMode) => {
+            generationMode = newMode;
+            dom.videoModeBtn.classList.toggle('active', newMode === 'video');
+            dom.imageModeBtn.classList.toggle('active', newMode === 'image');
+            dom.mainTitle.textContent = 'Video & Image Prompt Builder to JSON';
+            dom.generateImageBtn.classList.toggle('hidden', newMode === 'video');
+            dom.imageResultContainer.classList.toggle('hidden', newMode === 'video');
+            document.querySelectorAll('.video-only-field').forEach(el => el.classList.toggle('hidden', newMode === 'image'));
+            dom.charactersContainer.querySelectorAll('.char-speech-field').forEach(el => el.classList.toggle('hidden', newMode === 'image'));
+            updateJsonFromForm();
+        };
+
+        const toggleAudioFields = () => {
+            const isEnabled = dom.audioEnabled.checked;
+            dom.audioFieldsContainer.style.opacity = isEnabled ? '1' : '0.5';
+            dom.audioFieldsContainer.querySelectorAll('input, textarea, select').forEach(el => el.disabled = !isEnabled);
+        };
+
+        const addCharacter = (name = '', desc = '', expression = '', action = '', speech = '') => {
+            const characterDiv = document.createElement('div');
+            characterDiv.className = 'bg-gray-900 p-3 rounded-lg border border-gray-700';
+            const speechHiddenClass = generationMode === 'image' ? 'hidden' : '';
+
+            characterDiv.innerHTML = `
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="font-semibold text-gray-300">Character ${dom.charactersContainer.children.length + 1}</h4>
+                    <button type="button" class="text-red-400 hover:text-red-300 text-xs font-bold" onclick="this.parentElement.parentElement.remove(); updateJsonFromForm();">REMOVE</button>
+                </div>
+                <div class="space-y-2">
+                    <input type="text" class="char-name w-full bg-gray-800 border border-gray-600 text-white text-sm rounded-lg p-3" placeholder="Character Name (optional)" value="${name}">
+                    <input type="text" class="char-desc w-full bg-gray-800 border border-gray-600 text-white text-sm rounded-lg p-3" placeholder="Character Description (e.g., A cyborg detective)" value="${desc}">
+                    <input type="text" class="char-expression w-full bg-gray-800 border border-gray-600 text-white text-sm rounded-lg p-3" placeholder="Expression (e.g., smiling, determined)" value="${expression}">
+                    <input type="text" class="char-action w-full bg-gray-800 border border-gray-600 text-white text-sm rounded-lg p-3" placeholder="Action (e.g., typing on a keyboard)" value="${action}">
+                    <div class="char-speech-field ${speechHiddenClass}">
+                        <textarea class="char-speech w-full bg-gray-800 border border-gray-600 text-white text-sm rounded-lg p-3" rows="2" placeholder="Character's Speech (optional)">${speech}</textarea>
+                    </div>
+                </div>
+            `;
+            dom.charactersContainer.appendChild(characterDiv);
+            updateJsonFromForm();
+        };
+
+        // --- Gemini API Call Functions ---
+        async function callGeminiForText(systemInstruction, userPrompt, button) {
+             if (apiKey === "") {
+                alert("API Key is missing. Please add your Google AI Studio API key to the 'apiKey' variable in the script to use AI features outside of this environment.");
+                return null;
+            }
+             if (button) showLoading(button);
+             const payload = {
+                contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+                systemInstruction: { parts: [{ text: systemInstruction }] },
+                generationConfig: { responseMimeType: "application/json" }
+            };
+            try {
+                const response = await fetch(textApiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+                const result = await response.json();
+                if (result.candidates && result.candidates[0]?.content?.parts[0]?.text) {
+                    return JSON.parse(result.candidates[0].content.parts[0].text);
+                }
+                console.error("Gemini API Error: Invalid response structure", result);
+                alert("Could not get a valid response from the AI. Please check the console.");
+                return null;
+            } catch (error) {
+                console.error("Fetch Error:", error);
+                alert(`An error occurred while calling the AI: ${error.message}`);
+                return null;
+            } finally {
+                if (button) hideLoading(button);
+            }
+        }
+
+        async function enhancePrompt() {
+            const currentPrompt = dom.prompt.value;
+            if (!currentPrompt.trim()) { alert("Please enter a prompt to enhance."); return; }
+            const systemInstruction = "You are a creative assistant. Enhance the user's prompt to be more descriptive and cinematic. Respond with a valid JSON object: {\"enhancedPrompt\": \"...\"}.";
+            const result = await callGeminiForText(systemInstruction, `Enhance this prompt: "${currentPrompt}"`, dom.enhanceBtn);
+            if (result && result.enhancedPrompt) {
+                dom.prompt.value = result.enhancedPrompt;
+                updateJsonFromForm();
+            }
+        }
+
+        async function suggestSceneDetails() {
+            const currentPrompt = dom.prompt.value;
+            if (!currentPrompt.trim()) { alert("Please enter a main prompt first."); return; }
+            const systemInstruction = "You are a scene generation assistant. Generate descriptive details for the foreground and background based on the user's prompt. Respond with a valid JSON object: {\"foreground\": \"...\", \"background\": \"...\"}.";
+            const result = await callGeminiForText(systemInstruction, `Generate scene details for: "${currentPrompt}"`, dom.suggestSceneBtn);
+            if (result) {
+                if(result.foreground) dom.foregroundDetails.value = result.foreground;
+                if(result.background) dom.backgroundDetails.value = result.background;
+                updateJsonFromForm();
+            }
+        }
+
+         async function suggestAesthetics() {
+            const currentPrompt = dom.prompt.value;
+            if (!currentPrompt.trim()) { alert("Please enter a main prompt first."); return; }
+            const systemInstruction = "You are an art direction assistant. Suggest aesthetic details based on the user's prompt. Respond with a valid JSON object: {\"style\": \"...\", \"mood\": \"...\", \"lighting\": \"...\", \"colorPalette\": \"...\"}.";
+            const result = await callGeminiForText(systemInstruction, `Generate aesthetics for: "${currentPrompt}"`, dom.suggestAestheticsBtn);
+            if (result) {
+                if(result.style) dom.artisticStyle.value = result.style;
+                if(result.mood) dom.mood.value = result.mood;
+                if(result.lighting) dom.lighting.value = result.lighting;
+                if(result.colorPalette) dom.colorPalette.value = result.colorPalette;
+                updateJsonFromForm();
+            }
+        }
+
+        async function addAiCharacter() {
+            const currentPrompt = dom.prompt.value;
+            if (!currentPrompt.trim()) { alert("Please enter a main prompt first."); return; }
+            const systemInstruction = "You are a character generation assistant. Create one single character for the user's scene. Respond with a valid JSON object: {\"name\": \"...\", \"description\": \"...\", \"expression\": \"...\", \"action\": \"...\"}.";
+            const result = await callGeminiForText(systemInstruction, `Generate one character for this scene: "${currentPrompt}"`, dom.addAiCharacterBtn);
+            if (result) {
+                addCharacter(result.name, result.description, result.expression, result.action, '');
+            }
+        }
+
+        function createTextPromptFromObject(promptObject) {
+            let parts = [promptObject.prompt];
+            const { scene, aesthetics, cinematography, characters } = promptObject.parameters;
+            if (aesthetics?.style) parts.push(aesthetics.style);
+            if (scene?.genre) parts.push(scene.genre);
+            if (characters?.length > 0) parts.push(characters.map(c => `${c.description} (${c.expression}, ${c.action})`).join(', '));
+            if(scene) {
+                if (scene.location) parts.push(`at ${scene.location}`);
+                if (scene.timeOfDay) parts.push(`during ${scene.timeOfDay}`);
+            }
+            if (aesthetics) {
+                 if (aesthetics.mood) parts.push(`${aesthetics.mood} mood`);
+                 if (aesthetics.lighting) parts.push(`${aesthetics.lighting} lighting`);
+                 if (aesthetics.colorPalette) parts.push(`color palette of ${aesthetics.colorPalette}`);
+            }
+            if (cinematography) {
+                parts.push(cinematography.shotSize);
+                parts.push(cinematography.cameraAngle);
+            }
+             if (aesthetics?.vfx) parts.push(`with ${aesthetics.vfx}`);
+            return parts.filter(Boolean).join(', ');
+        }
+        
+        async function generateImage() {
+            if (apiKey === "") {
+                alert("API Key is missing. Please add your Google AI Studio API key to the 'apiKey' variable in the script to use AI features outside of this environment.");
+                return;
+            }
+            const finalImagePrompt = createTextPromptFromObject(getFormDataFromUI());
+            showLoading(dom.generateImageBtn);
+            dom.imagePlaceholder.classList.add('hidden');
+            dom.generatedImage.classList.add('hidden');
+            dom.imageSpinner.classList.remove('hidden');
+
+            const payload = { instances: [{ prompt: finalImagePrompt }], parameters: { "sampleCount": 1 }};
+
+            try {
+                const response = await fetch(imageApiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if(!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+                const result = await response.json();
+                if (result.predictions && result.predictions[0]?.bytesBase64Encoded) {
+                    const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+                    dom.generatedImage.src = imageUrl;
+                    dom.generatedImage.classList.remove('hidden');
+                } else {
+                    throw new Error("Invalid image data in API response.");
+                }
+            } catch (error) {
+                console.error("Image Generation Error:", error);
+                 let errorMessage = `Failed to generate image: ${error.message}`;
+                 if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+                     errorMessage = 'Image Generation Failed: CORS Error\n\nThis error usually happens when running the HTML file directly from your computer (e.g., as a file:///... URL).\n\nFor this to work outside of this environment, you need to run it from a local web server. If you have Python installed, you can navigate to the file\'s directory in your terminal and run:\n\npython -m http.server\n\nThen, open http://localhost:8000 in your browser.';
+                } else if (error.message.includes('400')) {
+                    errorMessage = 'Image Generation Failed: Bad Request (Error 400)\n\nThis can happen if your Google Cloud project does not have the "Vertex AI API" enabled, or if billing is not set up for the project. Please check your project settings.';
+                }
+                alert(errorMessage);
+                dom.imagePlaceholder.classList.remove('hidden');
+            } finally {
+                 dom.imageSpinner.classList.add('hidden');
+                 hideLoading(dom.generateImageBtn);
+            }
+        }
+        
+        // --- Core Application Logic (Form <-> JSON) ---
+        function getFormDataFromUI() {
+            const characters = Array.from(dom.charactersContainer.children).map(div => {
+                const charData = {
+                    name: getValue(div.querySelector('.char-name')),
+                    description: getValue(div.querySelector('.char-desc')),
+                    expression: getValue(div.querySelector('.char-expression')),
+                    action: getValue(div.querySelector('.char-action')),
+                };
+                if (generationMode === 'video') charData.speech = getValue(div.querySelector('.char-speech'));
+                return charData;
+            }).filter(c => c.description || c.name);
+
+            const promptData = {
+                prompt: getValue(dom.prompt),
+                parameters: {
+                    quality: getValue(dom.quality),
+                    aspectRatio: getValue(dom.aspectRatio),
+                    characters: characters,
+                    scene: {
+                        timeOfDay: getValue(dom.timeOfDay), location: getValue(dom.location),
+                        timePeriod: getValue(dom.timePeriod), genre: getValue(dom.genre),
+                        foreground: getValue(dom.foregroundDetails), background: getValue(dom.backgroundDetails),
+                    },
+                    cinematography: {
+                        shotSize: getValue(dom.shotSize), cameraAngle: getValue(dom.cameraAngle),
+                        lensType: getValue(dom.lensType), focus: getValue(dom.focus),
+                    },
+                    aesthetics: {
+                        style: getValue(dom.artisticStyle), mood: getValue(dom.mood),
+                        lighting: getValue(dom.lighting), colorPalette: getValue(dom.colorPalette),
+                        vfx: getValue(dom.vfx),
+                    },
+                    advanced: {
+                        negativePrompt: getValue(dom.negativePrompt), seed: getNumberValue(dom.seed),
+                    }
+                }
+            };
+
+            if (generationMode === 'video') {
+                promptData.parameters.duration = getValue(dom.duration);
+                promptData.parameters.fps = getNumberValue(dom.fps);
+                promptData.parameters.cinematography.cameraMovement = getValue(dom.cameraMovement);
+                promptData.parameters.audio = {
+                    enabled: getCheckboxValue(dom.audioEnabled),
+                    backgroundAudio: getValue(dom.backgroundAudio),
+                    music: getValue(dom.music),
+                    subtitles: getCheckboxValue(dom.enableSubtitles),
+                };
+            }
+            
+            const cleanup = (obj) => {
+                if (!obj) return;
+                Object.keys(obj).forEach(key => {
+                    if (obj[key] && typeof obj[key] === 'object') {
+                        cleanup(obj[key]);
+                        if (Object.keys(obj[key]).length === 0 || (Array.isArray(obj[key]) && obj[key].length === 0)) delete obj[key];
+                    } else if (obj[key] === null || obj[key] === '') delete obj[key];
+                });
+            }
+            cleanup(promptData);
+            return promptData;
+        }
+
+        function populateUIFromData(data) {
+            const p = data.parameters || {};
+            const scene = p.scene || {};
+            const cine = p.cinematography || {};
+            const aes = p.aesthetics || {};
+            const audio = p.audio || {};
+            const adv = p.advanced || {};
+
+            setFieldValue(dom.prompt, data.prompt);
+            setFieldValue(dom.quality, p.quality);
+            setFieldValue(dom.aspectRatio, p.aspectRatio);
+            setFieldValue(dom.duration, p.duration);
+            setFieldValue(dom.fps, p.fps);
+            setFieldValue(dom.timeOfDay, scene.timeOfDay);
+            setFieldValue(dom.location, scene.location);
+            setFieldValue(dom.timePeriod, scene.timePeriod);
+            setFieldValue(dom.genre, scene.genre);
+            setFieldValue(dom.foregroundDetails, scene.foreground);
+            setFieldValue(dom.backgroundDetails, scene.background);
+            
+            dom.charactersContainer.innerHTML = '';
+            if (p.characters && Array.isArray(p.characters)) {
+                p.characters.forEach(char => addCharacter(char.name, char.description, char.expression, char.action, char.speech));
+            }
+
+            setFieldValue(dom.shotSize, cine.shotSize);
+            setFieldValue(dom.cameraAngle, cine.cameraAngle);
+            setFieldValue(dom.cameraMovement, cine.cameraMovement);
+            setFieldValue(dom.lensType, cine.lensType);
+            setFieldValue(dom.focus, cine.focus);
+            
+            setFieldValue(dom.artisticStyle, aes.style);
+            setFieldValue(dom.mood, aes.mood);
+            setFieldValue(dom.lighting, aes.lighting);
+            setFieldValue(dom.colorPalette, aes.colorPalette);
+            setFieldValue(dom.vfx, aes.vfx);
+
+            setFieldValue(dom.audioEnabled, audio.enabled);
+            toggleAudioFields();
+            setFieldValue(dom.backgroundAudio, audio.backgroundAudio);
+            setFieldValue(dom.music, audio.music);
+            setFieldValue(dom.enableSubtitles, audio.subtitles);
+            
+            setFieldValue(dom.negativePrompt, adv.negativePrompt);
+            setFieldValue(dom.seed, adv.seed);
+        }
+
+        function updateJsonFromForm() {
+            if(document.activeElement !== dom.jsonOutput){
+                const jsonObject = getFormDataFromUI();
+                const jsonString = JSON.stringify(jsonObject, null, 2);
+                dom.jsonOutput.value = jsonString;
+            }
+        }
+
+        function updateFormFromJson() {
+            const jsonString = dom.jsonOutput.value;
+            if (!jsonString) return;
+            try {
+                const data = JSON.parse(jsonString);
+                populateUIFromData(data);
+                dom.jsonOutput.style.borderColor = 'transparent';
+            } catch (error) {
+                 dom.jsonOutput.style.borderColor = '#ef4444'; 
+            }
+        }
+        
+        // --- FILE HANDLING ---
+        function saveJsonToFile() {
+            let fileName = dom.fileNameInput.value.trim() || "prompt.json";
+            if (!fileName.toLowerCase().endsWith('.json')) {
+                fileName += '.json';
+            }
+            const jsonString = dom.jsonOutput.value;
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function loadJsonFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    populateUIFromData(data);
+                    updateJsonFromForm();
+                } catch(error) {
+                    alert("Failed to load or parse the JSON file.");
+                    console.error("File load error:", error);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; 
+        }
+
+        const debounce = (func, delay) => {
+            let timeout;
+            return (...args) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), delay);
+            };
+        };
+        const debouncedUpdateForm = debounce(updateFormFromJson, 500);
+
+        // --- INITIALIZATION ---
+        function bindEventListeners() {
+            dom.promptForm.addEventListener('input', updateJsonFromForm);
+            dom.jsonOutput.addEventListener('input', debouncedUpdateForm);
+            dom.generateImageBtn.addEventListener('click', generateImage);
+            dom.enhanceBtn.addEventListener('click', enhancePrompt);
+            dom.addManualCharacterBtn.addEventListener('click', () => addCharacter());
+            dom.addAiCharacterBtn.addEventListener('click', addAiCharacter);
+            dom.suggestSceneBtn.addEventListener('click', suggestSceneDetails);
+            dom.suggestAestheticsBtn.addEventListener('click', suggestAesthetics);
+            dom.audioEnabled.addEventListener('change', toggleAudioFields);
+            dom.videoModeBtn.addEventListener('click', () => setGenerationMode('video'));
+            dom.imageModeBtn.addEventListener('click', () => setGenerationMode('image'));
+            dom.saveJsonBtn.addEventListener('click', saveJsonToFile);
+            dom.loadJsonBtn.addEventListener('click', () => dom.fileInput.click());
+            dom.fileInput.addEventListener('change', loadJsonFromFile);
+            
+            dom.copyBtn.addEventListener('click', () => {
+                navigator.clipboard.writeText(dom.jsonOutput.value).then(() => {
+                    dom.copyBtn.textContent = 'Copied!';
+                    setTimeout(() => { dom.copyBtn.textContent = 'Copy'; }, 2000);
+                }).catch(err => {
+                    console.error('Copy failed:', err);
+                    const textArea = document.createElement('textarea');
+                    textArea.value = dom.jsonOutput.value;
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        dom.copyBtn.textContent = 'Copied!';
+                        setTimeout(() => { dom.copyBtn.textContent = 'Copy'; }, 2000);
+                    } catch (e) {
+                        console.error('Fallback copy failed', e);
+                    }
+                    document.body.removeChild(textArea);
+                });
+            });
+        }
+        
+        function init() {
+            bindEventListeners();
+            addCharacter(); // Start with one character field
+            setGenerationMode('video');
+        }
+
+        init();
+    </script>
+
+</body>
+</html>
