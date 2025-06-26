@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video & Image Prompt Builder to JSON</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111827;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4b5563;
+        }
+        .form-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239CA3AF' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-color: #1f2937;
+            border-color: #374151;
+        }
+        .form-input, .form-textarea {
+             background-color: #1f2937;
+             border: 1px solid #374151;
+             border-radius: 0.5rem;
+             color: #d1d5db;
+        }
+        .form-input::placeholder, .form-textarea::placeholder {
+            color: #6b7280;
+        }
+        .mode-btn.active {
+            background-color: #4f46e5;
+            color: white;
+        }
+        #json-output {
+            resize: none;
+            border: none;
+            outline: none;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="text-center mb-8">
+            <h1 id="main-title" class="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-400 via-indigo-400 to-blue-400 text-transparent bg-clip-text">
+                Video & Image Prompt Builder
+            </h1>
+            <p class="text-gray-400 mt-2">Craft detailed prompts and export to JSON.</p>
+            <div class="mt-6 flex justify-center gap-2">
+                <div class="inline-flex rounded-lg bg-gray-800 p-1">
+                    <button id="videoModeBtn" class="mode-btn active px-4 py-2 text-sm font-semibold rounded-md transition-colors">Video</button>
+                    <button id="imageModeBtn" class="mode-btn px-4 py-2 text-sm font-semibold rounded-md transition-colors text-gray-400">Image</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Left Column: Input Form -->
+            <div id="form-panel" class="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-gray-700">
+                <form id="prompt-form" class="space-y-6">
+                    <!-- Category Dropdown -->
+                     <div>
+                        <label for="category" class="block mb-2 text-sm font-medium text-gray-300">Category</label>
+                        <select id="category" data-path="category" class="form-select w-full p-3 rounded-lg">
+                             <option value="">Select a Category...</option>
+                        </select>
+                    </div>
+
+                    <!-- Dynamic Fields Container -->
+                    <div id="dynamic-fields-container" class="space-y-4 transition-all duration-300"></div>
+
+                    <!-- Fixed Dropdowns Section -->
+                    <fieldset class="fieldset border border-gray-700 p-4 rounded-lg">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">Visual Modifiers</legend>
+                        <div id="fixed-fields-container" class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6 mt-4"></div>
+                    </fieldset>
+
+                     <fieldset class="fieldset border border-gray-700 p-4 rounded-lg">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">Combined Prompt</legend>
+                        <div>
+                            <label for="prompt" class="block mb-2 text-sm font-medium text-gray-300">Generated Prompt String</label>
+                            <textarea id="prompt" data-path="prompt" rows="5" class="form-textarea w-full p-3" placeholder="The final combined prompt will be constructed here..."></textarea>
+                        </div>
+                    </fieldset>
+
+                </form>
+            </div>
+
+            <!-- Right Column: JSON Output -->
+            <div class="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-gray-700 h-full flex flex-col">
+                <div class="flex justify-between items-center border-b border-gray-700 pb-3 mb-6">
+                    <h2 class="text-2xl font-semibold text-gray-100">JSON Output</h2>
+                </div>
+                 <div class="mb-4 space-y-3">
+                     <div class="flex items-center gap-3">
+                         <button id="copyBtn" class="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-200 font-medium py-2.5 px-4 rounded-lg transition duration-300">Copy JSON</button>
+                         <button id="loadJsonBtn" class="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-200 font-medium py-2.5 px-4 rounded-lg transition duration-300">Load from File</button>
+                         <input type="file" id="file-input" class="hidden" accept=".json">
+                     </div>
+                     <div class="flex items-center gap-3">
+                         <input type="text" id="fileNameInput" class="form-input w-full p-2.5" value="prompt.json">
+                         <button id="saveJsonBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-5 rounded-lg transition duration-300">Save</button>
+                     </div>
+                </div>
+                <div class="flex-grow bg-gray-900 rounded-lg p-1 overflow-auto">
+                    <textarea id="json-output" class="w-full h-full min-h-[400px] bg-transparent text-sm text-green-300 rounded-lg p-3"></textarea>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DATA DEFINITIONS ---
+            const categoryData = [
+                { category: "Cinematic Movie Scene", dynamicFields: ["Genre/setting", "Main character/subject", "Environment details", "Mood"] },
+                { category: "Animation/Cartoon Sequence", dynamicFields: ["Animation style", "Characters/creatures", "Visual style", "Stylistic influences"] },
+                { category: "Fashion Show Runway", dynamicFields: ["Venue/theme", "Model(s) and attire", "Atmosphere", "Overall vibe"] },
+                { category: "Product Showcase/Advertisement", dynamicFields: ["Product", "Setting/backdrop", "Demonstration", "Text/graphics overlays", "Brand style"] },
+                { category: "Nature Documentary Segment", dynamicFields: ["Location and time", "Subject", "Sensory details", "Lighting conditions", "Narrative tone"] },
+                { category: "Travel Vlog or Adventure Video", dynamicFields: ["Destination", "Activity", "Vlogger Style", "Key Moments", "Overall Vibe"] },
+                { category: "Music Video Performance", dynamicFields: ["Artist/band", "Performance setting", "Concept/storyline elements", "Visual alignment"] },
+                { category: "Sports Highlight or Action Sequence", dynamicFields: ["Sport", "Main athlete/participants", "Moment/skill", "Crowd/stadium effects", "Pacing"] },
+                { category: "News Report or Broadcast Segment", dynamicFields: ["Context", "Anchor/reporter", "Topic", "Graphics/headlines", "Props/surroundings", "Tone"] },
+                { category: "Educational Explainer or Tutorial", dynamicFields: ["Topic", "Presenter/format", "Setting", "Visual elements", "Demonstration focus", "Camera focus"] },
+                { category: "Video Game Cinematic / Fantasy Cutscene", dynamicFields: ["Theme/genre", "Characters/heroes", "Environment", "Action/dialogue", "Visual effects", "Cinematic quality"] },
+                { category: "Historical Drama Scene", dynamicFields: ["Era/setting", "Characters", "Costumes and Props", "Key Event", "Atmosphere"] }
+            ];
+
+            const fixedDropdownsData = [
+                { field: "Visual Aesthetics", dropdown: ["Cinematic", "Filmic", "Photorealistic", "Hyper-realistic", "Surreal", "Abstract", "Stylized", "Minimalist", "Maximalist", "Cartoonish", "Anime-style", "Comic book style", "Cyberpunk", "Steampunk", "Noir", "Vintage retro", "Modern sleek", "Futuristic", "High-tech holographic", "Dystopian", "Utopian", "Grunge", "Psychedelic", "Whimsical", "Epic scale", "Intimate", "Magical realism", "Baroque", "Fantasy art style", "Realistic CGI", "Hand-drawn", "Cel-shaded", "Vaporwave", "Experimental"] },
+                { field: "Genre & Theme Styles", dropdown: ["Science fiction", "Fantasy", "Horror", "Thriller", "Mystery", "Romance", "Comedy", "Action/Adventure", "Superhero", "Noir detective", "Western", "Post-apocalyptic", "Dystopian future", "Utopian future", "Medieval", "Historical drama", "War film style", "Spy/Espionage", "Crime drama", "Mythological", "Steampunk theme", "Cyberpunk cityscape", "Space opera", "Zombie apocalypse", "Supernatural", "Fairy tale", "Slice of life", "Musical", "Documentary style", "Film noir", "Epic historical", "Surrealist", "Detective mystery", "Sports drama"] },
+                { field: "Lighting Styles", dropdown: ["Natural lighting", "Soft lighting", "Hard lighting", "Warm lighting", "Cool lighting", "High-key lighting", "Low-key lighting", "Key light", "Fill light", "Back lighting", "Rim lighting", "Side lighting", "Top lighting", "Underlighting", "Ambient light", "Practical lighting", "Motivated lighting", "Studio lighting", "Stage spotlight", "Neon lighting", "Candlelight", "Firelight", "Golden hour", "Blue hour", "Moonlight", "Silhouette lighting", "Chiaroscuro", "Volumetric light", "Flashing strobe", "Color gel lighting", "High contrast lighting", "Flat lighting", "Dappled light", "UV/Blacklight"] },
+                { field: "Color Tones", dropdown: ["Warm tones", "Cool tones", "Vibrant colors", "Saturated", "Desaturated", "Muted palette", "Monochrome", "Black and white", "Sepia", "High contrast", "Low contrast", "Pastel tones", "Neon colors", "Earth tones", "Teal and orange", "Bleach bypass", "Teal and orange contrast", "Cool blue tint", "Golden tint", "Color pop", "Retro color grading", "Cross-processed colors", "Duo-tone", "Rainbow palette", "Moody blue tones", "Greyscale", "Infrared palette", "High saturation", "Filmic colors", "Cartoon bright", "Comic book coloring", "Vibrant HDR", "Gothic muted"] },
+                { field: "Camera Movements", dropdown: ["Static shot", "Pan", "Tilt", "Zoom in", "Zoom out", "Dolly in", "Dolly out", "Tracking shot", "Trucking shot", "Crane shot", "Jib shot", "Steadicam shot", "Handheld shot", "Gimbal shot", "Drone shot", "Aerial shot", "Arc shot", "Whip pan", "Whip tilt", "Rack focus", "Push in", "Pull out", "360-degree shot", "POV moving shot", "Tracking POV", "Long take / Oner", "Slow motion movement", "Time-lapse pan", "Tabletop spin", "Vertigo shot", "Pedestal move", "Tilt-pan combination", "Roll"] },
+                { field: "Camera Angles & Shot Types", dropdown: ["Eye-level shot", "High-angle shot", "Low-angle shot", "Bird’s-eye view", "Worm’s-eye view", "Dutch angle", "Over-the-shoulder (OTS) shot", "Point-of-view (POV) shot", "First-person perspective", "Aerial perspective", "Overhead shot", "Close-up (CU)", "Extreme close-up (ECU)", "Medium shot", "Medium close-up", "Medium long shot", "Long shot / Wide shot", "Extreme wide shot", "Establishing shot", "Two-shot", "Three-shot", "Group shot", "Overhead two-shot", "Master shot", "Cut-in shot", "Cutaway shot", "Reaction shot", "Insert shot", "Lock-down shot", "OTS dialog shot", "Panoramic shot", "Tilted shot"] },
+                { field: "Composition Techniques", dropdown: ["Rule of thirds", "Centered composition", "Symmetrical framing", "Asymmetrical composition", "Leading lines", "Diagonal lines", "Leading diagonals", "Balance", "Imbalance", "Frame within a frame", "Foreground framing", "Background framing", "Depth of field", "Shallow focus", "Deep focus", "Negative space", "Filled frame", "Leading room", "Head room", "Horizon line placement", "Golden ratio composition", "Triangular composition", "Rule of odds", "Repetition", "Symmetry and patterns", "Texture emphasis", "Silhouette composition", "Background separation", "Visual hierarchy", "Golden triangle", "Eye leading", "Subframing"] },
+                { field: "Lens & Filter Effects", dropdown: ["Bokeh", "Shallow depth of field", "Rack focus", "Lens flare", "Anamorphic lens flare", "Fish-eye distortion", "Wide-angle distortion", "Telephoto compression", "Macro close-up", "Tilt-shift effect", "Soft focus filter", "Diffusion glow", "Vignette", "Film grain", "Film burn", "VHS glitch", "Chromatic aberration", "High dynamic range (HDR) effect", "Sepia filter", "Noir filter", "Color grading filter", "Infrared filter", "X-ray effect", "Heat vision/thermal effect", "Night vision effect", "Motion blur", "Long exposure light trails", "Double exposure", "Ghosting", "Kaleidoscope effect", "Holographic overlay", "Vintage film filter"] },
+                { field: "Cinematic Techniques & Special Effects", dropdown: ["Slow motion", "Fast motion", "Time-lapse", "Hyperlapse", "Stop-motion style", "Freeze frame", "Bullet time", "Dolly zoom", "One-shot sequence", "Montage sequence", "Split screen", "Green screen compositing", "Chroma key effect", "Match cut", "Jump cut", "Smash cut", "Crossfade", "Whip pan transition", "Fade to black", "Dream sequence effect", "Flashback cut", "Fast cut edits", "Slow dissolve", "Match dissolve", "Wipe transition", "Graphic overlay", "CGI effects", "Practical effects", "Miniature effects", "Pyrotechnics", "Motion capture", "Fourth wall break", "Slow push-in", "Crash zoom", "Speed ramping"] },
+                { field: "Animation & Medium Styles", dropdown: ["2D animation", "3D animation", "Hand-drawn animation", "Anime style animation", "Cartoon style", "Motion graphics", "Stop-motion animation", "Claymation", "Puppetry", "Live-action", "Mixed media", "Rotoscoping", "Cut-out animation", "Silhouette animation", "Pixel art animation", "Low-poly CGI", "Vector art style", "Stick-figure animation", "Clay sculpture animation", "CGI realism", "Cel animation", "Flipbook style", "Typography animation", "Whiteboard animation", "Infographic animation", "Animatronic", "VR animation", "Stop-motion with objects", "Experimental animation", "Clay/Puppet hybrid", "High frame rate animation", "Vintage Disney style", "Unreal engine cinematic"] },
+                { field: "Film Format & Texture", dropdown: ["35mm film look", "16mm film", "8mm film", "VHS tape look", "DVD quality", "4K UHD", "Black and white", "Technicolor", "Sepia tone", "Silent film style", "Letterboxed", "Widescreen 2.35:1", "IMAX full-frame", "Handheld camcorder", "Found footage", "Newsreel vintage", "Polaroid look", "Overexposed highlights", "Underexposed shadows", "Film grain texture", "Crispy sharp", "Soft focus vintage lens", "Vignette edges", "Color bleed", "HDR toning", "Bloom effect", "Frame jitter", "Scan lines", "Dust and scratches", "Clean digital", "Cinemascope", "Technicolor palette", "High frame rate"] },
+                { field: "Editing & Transitions", dropdown: ["Cut", "Hard cut", "Jump cut", "Match cut", "L-cut", "J-cut", "Cross-cutting", "Parallel editing", "Montage", "Continuous take", "Fast cutting", "Slow cutting", "Dissolve", "Crossfade", "Fade in", "Fade out", "Wipe", "Iris in/out", "Smash cut", "Cutaway", "Insert", "Match dissolve", "Jump dissolve", "Split edit", "Freeze-frame", "Speed ramp", "Cut to black", "Flash cut", "Montage sequence", "Continuity editing", "Jumpy editing", "Non-linear narrative", "Slow fade", "Cross-cut montage", "Parallel action"] }
+            ];
+            
+            // --- DOM Elements ---
+            const getEl = (id) => document.getElementById(id);
+            const dom = {
+                videoModeBtn: getEl('videoModeBtn'), imageModeBtn: getEl('imageModeBtn'),
+                mainTitle: getEl('main-title'), promptForm: getEl('prompt-form'), jsonOutput: getEl('json-output'),
+                saveJsonBtn: getEl('saveJsonBtn'), loadJsonBtn: getEl('loadJsonBtn'),
+                fileInput: getEl('file-input'), copyBtn: getEl('copyBtn'),
+                fileNameInput: getEl('fileNameInput'), category: getEl('category'),
+                prompt: getEl('prompt'), dynamicFieldsContainer: getEl('dynamic-fields-container'),
+                fixedFieldsContainer: getEl('fixed-fields-container')
+            };
+            
+            // --- State ---
+            let generationMode = 'video';
+            
+            // --- UI Setup & Generation ---
+            const setGenerationMode = (newMode) => {
+                generationMode = newMode;
+                dom.videoModeBtn.classList.toggle('active', newMode === 'video');
+                dom.imageModeBtn.classList.toggle('active', newMode === 'image');
+                dom.mainTitle.textContent = newMode === 'video' ? 'Video Prompt Builder' : 'Image Prompt Builder';
+                // Toggle visibility for video-only dropdowns
+                const videoOnlyFields = ["Camera Movements", "Cinematic Techniques & Special Effects", "Editing & Transitions"];
+                videoOnlyFields.forEach(fieldName => {
+                    const fieldId = fieldName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                    const container = getEl(fieldId)?.parentElement;
+                    if(container) {
+                        container.classList.toggle('hidden', newMode === 'image');
+                    }
+                });
+                updateJsonFromForm();
+            };
+
+            const populateDropdown = (selectElement, options, includeDefault = true, defaultText = 'Select...') => {
+                selectElement.innerHTML = '';
+                if(includeDefault) {
+                    const defaultOpt = document.createElement('option');
+                    defaultOpt.value = "";
+                    defaultOpt.textContent = defaultText;
+                    selectElement.appendChild(defaultOpt);
+                }
+                options.forEach(option => {
+                    const opt = document.createElement('option');
+                    opt.value = option;
+                    opt.textContent = option;
+                    selectElement.appendChild(opt);
+                });
+            };
+
+            const updateDynamicFields = (selectedCategory) => {
+                dom.dynamicFieldsContainer.innerHTML = '';
+                const template = categoryData.find(t => t.category === selectedCategory);
+                if (!template || template.dynamicFields.length === 0) return;
+
+                const fieldset = document.createElement('fieldset');
+                fieldset.className = 'fieldset border border-gray-700 p-4 rounded-lg';
+                const legend = document.createElement('legend');
+                legend.className = 'text-lg font-semibold text-gray-200 px-2';
+                legend.textContent = 'Prompt Details';
+                fieldset.appendChild(legend);
+
+                const container = document.createElement('div');
+                container.className = 'space-y-4 mt-2';
+                
+                template.dynamicFields.forEach(fieldName => {
+                    const cleanFieldName = fieldName.replace(/[{}]/g, '');
+                    const fieldId = cleanFieldName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                    const div = document.createElement('div');
+                    div.innerHTML = `
+                        <label for="${fieldId}" class="block mb-2 text-sm font-medium text-gray-300">${cleanFieldName}</label>
+                        <input type="text" id="${fieldId}" data-path="details.${fieldId}" class="form-input w-full p-3" placeholder="Enter ${cleanFieldName}...">
+                    `;
+                    container.appendChild(div);
+                });
+                fieldset.appendChild(container);
+                dom.dynamicFieldsContainer.appendChild(fieldset);
+            };
+            
+            const buildCombinedPrompt = () => {
+                const data = getFormDataFromUI();
+                let promptParts = [];
+
+                if (data.details) {
+                    promptParts = promptParts.concat(Object.values(data.details).filter(Boolean));
+                }
+                if (data.modifiers) {
+                    promptParts = promptParts.concat(Object.values(data.modifiers).filter(v => v));
+                }
+
+                dom.prompt.value = promptParts.join(', ');
+            };
+
+            // --- Core Application Logic (Form <-> JSON) ---
+            const getFormDataFromUI = () => {
+                const data = {};
+                const formFields = Array.from(dom.promptForm.querySelectorAll('[data-path]'));
+
+                formFields.forEach(el => {
+                    // Skip hidden fields in image mode
+                    if (generationMode === 'image' && el.closest('.hidden')) return;
+
+                    const path = el.dataset.path;
+                    let value = el.value.trim();
+
+                    if (!value) return;
+                    
+                    const set = (obj, p, val) => {
+                        const keys = p.split('.');
+                        keys.slice(0, -1).forEach((key) => {
+                            obj = obj[key] = obj[key] || {};
+                        });
+                        obj[keys[keys.length - 1]] = val;
+                    };
+                    set(data, path, value);
+                });
+                
+                return data;
+            };
+
+            const populateUIFromData = (data) => {
+                dom.promptForm.reset();
+                dom.dynamicFieldsContainer.innerHTML = '';
+
+                if (data.category) {
+                    dom.category.value = data.category;
+                    updateDynamicFields(data.category);
+                }
+                
+                // Use a timeout to ensure dynamic fields are rendered before populating them
+                setTimeout(() => {
+                    const get = (obj, path) => path.split('.').reduce((o, k) => (o || {})[k], obj);
+                    const formFields = Array.from(dom.promptForm.querySelectorAll('[data-path]'));
+
+                    formFields.forEach(el => {
+                         const path = el.dataset.path;
+                         const value = get(data, path);
+                         if (el && value !== undefined && value !== null) {
+                            el.value = value;
+                         }
+                    });
+                    buildCombinedPrompt();
+                }, 100); 
+            };
+
+            const updateJsonFromForm = () => {
+                buildCombinedPrompt(); 
+                if (document.activeElement !== dom.jsonOutput) {
+                    const jsonObject = getFormDataFromUI();
+                    jsonObject.mode = generationMode;
+                    const jsonString = JSON.stringify(jsonObject, null, 2);
+                    dom.jsonOutput.value = jsonString;
+                }
+            };
+            
+            const updateFormFromJson = () => {
+                const jsonString = dom.jsonOutput.value;
+                if (!jsonString) return;
+                try {
+                    const data = JSON.parse(jsonString);
+                    populateUIFromData(data);
+                    if(data.mode) {
+                        setGenerationMode(data.mode);
+                    }
+                    dom.jsonOutput.style.borderColor = 'transparent';
+                } catch (error) {
+                    dom.jsonOutput.style.borderColor = '#ef4444'; 
+                    console.error("JSON parse error:", error);
+                }
+            };
+            
+            // --- FILE HANDLING ---
+            const saveJsonToFile = () => {
+                let fileName = dom.fileNameInput.value.trim() || "prompt.json";
+                if (!fileName.toLowerCase().endsWith('.json')) fileName += '.json';
+                const jsonString = dom.jsonOutput.value;
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            };
+
+            const loadJsonFromFile = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        dom.jsonOutput.value = e.target.result;
+                        updateFormFromJson();
+                    } catch(error) {
+                        alert("Failed to load or parse the JSON file.");
+                        console.error("File load error:", error);
+                    }
+                };
+                reader.readAsText(file);
+                event.target.value = ''; 
+            };
+            
+            const copyJsonToClipboard = () => {
+                dom.jsonOutput.select();
+                try {
+                    // Using modern clipboard API with fallback
+                    navigator.clipboard.writeText(dom.jsonOutput.value).then(() => {
+                        dom.copyBtn.textContent = 'Copied!';
+                        setTimeout(() => { dom.copyBtn.textContent = 'Copy JSON'; }, 2000);
+                    }).catch(() => {
+                       // Fallback for older browsers
+                       document.execCommand('copy');
+                       dom.copyBtn.textContent = 'Copied!';
+                       setTimeout(() => { dom.copyBtn.textContent = 'Copy JSON'; }, 2000);
+                    });
+                } catch (err) {
+                    console.error('Failed to copy JSON: ', err);
+                }
+            }
+            
+            const debounce = (func, delay) => {
+                let timeout;
+                return (...args) => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), delay);
+                };
+            };
+            const debouncedUpdateForm = debounce(updateFormFromJson, 400);
+
+            // --- INITIALIZATION ---
+            const init = () => {
+                // Populate Category dropdown
+                populateDropdown(dom.category, categoryData.map(t => t.category), true, "Select a Category...");
+
+                // Populate Fixed dropdowns
+                fixedDropdownsData.forEach(item => {
+                    const fieldId = item.field.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                    const div = document.createElement('div');
+                    
+                    const label = document.createElement('label');
+                    label.htmlFor = fieldId;
+                    label.className = "block mb-2 text-sm font-medium text-gray-300";
+                    label.textContent = item.field;
+                    
+                    const select = document.createElement('select');
+                    select.id = fieldId;
+                    select.className = "form-select w-full p-3 rounded-lg";
+                    select.dataset.path = `modifiers.${fieldId}`;
+                    populateDropdown(select, item.dropdown);
+                    
+                    div.appendChild(label);
+                    div.appendChild(select);
+                    dom.fixedFieldsContainer.appendChild(div);
+                });
+
+                // Bind Event Listeners
+                dom.promptForm.addEventListener('input', updateJsonFromForm);
+                dom.jsonOutput.addEventListener('input', debouncedUpdateForm);
+                dom.videoModeBtn.addEventListener('click', () => setGenerationMode('video'));
+                dom.imageModeBtn.addEventListener('click', () => setGenerationMode('image'));
+                dom.saveJsonBtn.addEventListener('click', saveJsonToFile);
+                dom.loadJsonBtn.addEventListener('click', () => dom.fileInput.click());
+                dom.fileInput.addEventListener('change', loadJsonFromFile);
+                dom.copyBtn.addEventListener('click', copyJsonToClipboard);
+                
+                dom.category.addEventListener('change', (e) => {
+                    updateDynamicFields(e.target.value);
+                    updateJsonFromForm();
+                });
+
+                // Initial setup
+                setGenerationMode('video');
+                updateJsonFromForm();
+            };
+            
+            init();
+        });
+    </script>
+
+</body>
+</html>
