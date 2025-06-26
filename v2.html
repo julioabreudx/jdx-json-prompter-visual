@@ -34,11 +34,14 @@
             background-color: #1f2937;
             border-color: #374151;
         }
-        .form-input, .form-textarea {
+        .form-input, .form-textarea, .form-checkbox {
              background-color: #1f2937;
              border: 1px solid #374151;
              border-radius: 0.5rem;
              color: #d1d5db;
+        }
+        .form-checkbox {
+            color: #4f46e5;
         }
         .form-input::placeholder, .form-textarea::placeholder {
             color: #6b7280;
@@ -52,6 +55,12 @@
             border: none;
             outline: none;
             box-shadow: none;
+        }
+        .video-only, .image-only {
+            transition: all 0.3s ease-in-out;
+        }
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
@@ -78,7 +87,7 @@
                     <!-- Category Dropdown -->
                      <div>
                         <label for="category" class="block mb-2 text-sm font-medium text-gray-300">Category</label>
-                        <select id="category" data-path="category" class="form-select w-full p-3 rounded-lg">
+                        <select id="category" class="form-select w-full p-3 rounded-lg">
                              <option value="">Select a Category...</option>
                         </select>
                     </div>
@@ -86,18 +95,95 @@
                     <!-- Dynamic Fields Container -->
                     <div id="dynamic-fields-container" class="space-y-4 transition-all duration-300"></div>
 
+                     <!-- Combined Prompt -->
+                     <fieldset class="fieldset border border-gray-700 p-4 rounded-lg">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">Combined Prompt</legend>
+                        <div>
+                            <label for="prompt" class="block mb-2 text-sm font-medium text-gray-300">Generated & Editable Prompt String</label>
+                            <textarea id="prompt" data-path="prompt" rows="5" class="form-textarea w-full p-3" placeholder="The final combined prompt will be constructed here..."></textarea>
+                        </div>
+                    </fieldset>
+
                     <!-- Fixed Dropdowns Section -->
                     <fieldset class="fieldset border border-gray-700 p-4 rounded-lg">
                         <legend class="text-lg font-semibold text-gray-200 px-2">Visual Modifiers</legend>
                         <div id="fixed-fields-container" class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6 mt-4"></div>
                     </fieldset>
-
-                     <fieldset class="fieldset border border-gray-700 p-4 rounded-lg">
-                        <legend class="text-lg font-semibold text-gray-200 px-2">Combined Prompt</legend>
-                        <div>
-                            <label for="prompt" class="block mb-2 text-sm font-medium text-gray-300">Generated Prompt String</label>
-                            <textarea id="prompt" data-path="prompt" rows="5" class="form-textarea w-full p-3" placeholder="The final combined prompt will be constructed here..."></textarea>
+                    
+                     <!-- Subtitles Section -->
+                    <fieldset id="subtitles-section" class="fieldset border border-gray-700 p-4 rounded-lg video-only">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">Subtitles</legend>
+                         <div class="mt-2 flex items-center">
+                            <input id="subtitlesEnabled" data-path="subtitles.enabled" type="checkbox" class="form-checkbox h-4 w-4 rounded focus:ring-indigo-500">
+                            <label for="subtitlesEnabled" class="ml-2 text-sm font-medium text-gray-300">Subtitles Enabled</label>
                         </div>
+                    </fieldset>
+
+                    <!-- Audio Section -->
+                    <fieldset id="audio-section" class="fieldset border border-gray-700 p-4 rounded-lg video-only">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">Audio</legend>
+                        <div class="space-y-4 mt-2">
+                             <div class="flex items-center">
+                                <input id="audioEnabled" data-path="audio.enabled" type="checkbox" class="form-checkbox h-4 w-4 rounded focus:ring-indigo-500">
+                                <label for="audioEnabled" class="ml-2 text-sm font-medium text-gray-300">Audio Enabled</label>
+                            </div>
+                            <div id="audio-fields-container" class="space-y-4">
+                                <div>
+                                    <label for="character-speech" class="block mb-2 text-sm font-medium text-gray-300">Character Speech/Dialog</label>
+                                    <input type="text" id="character-speech" data-path="audio.dialog" class="form-input w-full p-3" placeholder="e.g., 'I have a bad feeling about this.'">
+                                </div>
+                                 <div>
+                                    <label for="main-audio" class="block mb-2 text-sm font-medium text-gray-300">Main Audio Description</label>
+                                    <input type="text" id="main-audio" data-path="audio.main" class="form-input w-full p-3" placeholder="e.g., Tense orchestral score">
+                                </div>
+                                 <div>
+                                    <label for="background-audio" class="block mb-2 text-sm font-medium text-gray-300">Background Audio Description</label>
+                                    <input type="text" id="background-audio" data-path="audio.background" class="form-input w-full p-3" placeholder="e.g., Sound of rain and distant sirens">
+                                </div>
+                                <div>
+                                    <label for="sfx-audio" class="block mb-2 text-sm font-medium text-gray-300">Sound FX Description</label>
+                                    <input type="text" id="sfx-audio" data-path="audio.sfx" class="form-input w-full p-3" placeholder="e.g., Loud thunderclap, laser blast">
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+                    
+                    <!-- Video Specs Section -->
+                    <fieldset id="video-specs-section" class="fieldset border border-gray-700 p-4 rounded-lg video-only">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">Video Specs</legend>
+                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6 mt-4">
+                            <div>
+                                <label for="duration" class="block mb-2 text-sm font-medium text-gray-300">Duration</label>
+                                <input type="text" id="duration" data-path="specs.duration" class="form-input w-full p-3" placeholder="e.g., 8s">
+                            </div>
+                             <div>
+                                <label for="fps" class="block mb-2 text-sm font-medium text-gray-300">FPS</label>
+                                <input type="number" id="fps" data-path="specs.fps" class="form-input w-full p-3" placeholder="e.g., 24">
+                            </div>
+                            <div>
+                                <label for="video-resolution" class="block mb-2 text-sm font-medium text-gray-300">Resolution</label>
+                                <input type="text" id="video-resolution" data-path="specs.resolution" class="form-input w-full p-3" placeholder="e.g., 1920x1080">
+                            </div>
+                            <div>
+                                <label for="video-aspect-ratio" class="block mb-2 text-sm font-medium text-gray-300">Aspect Ratio</label>
+                                <input type="text" id="video-aspect-ratio" data-path="specs.aspectRatio" class="form-input w-full p-3" placeholder="e.g., 16:9">
+                            </div>
+                         </div>
+                    </fieldset>
+                    
+                     <!-- Image Specs Section -->
+                    <fieldset id="image-specs-section" class="fieldset border border-gray-700 p-4 rounded-lg image-only hidden">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">Image Specs</legend>
+                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6 mt-4">
+                             <div>
+                                <label for="image-resolution" class="block mb-2 text-sm font-medium text-gray-300">Resolution</label>
+                                <input type="text" id="image-resolution" data-path="specs.resolution" class="form-input w-full p-3" placeholder="e.g., 1024x1024">
+                            </div>
+                            <div>
+                                <label for="image-aspect-ratio" class="block mb-2 text-sm font-medium text-gray-300">Aspect Ratio</label>
+                                <input type="text" id="image-aspect-ratio" data-path="specs.aspectRatio" class="form-input w-full p-3" placeholder="e.g., 1:1">
+                            </div>
+                         </div>
                     </fieldset>
 
                 </form>
@@ -168,7 +254,12 @@
                 fileInput: getEl('file-input'), copyBtn: getEl('copyBtn'),
                 fileNameInput: getEl('fileNameInput'), category: getEl('category'),
                 prompt: getEl('prompt'), dynamicFieldsContainer: getEl('dynamic-fields-container'),
-                fixedFieldsContainer: getEl('fixed-fields-container')
+                fixedFieldsContainer: getEl('fixed-fields-container'),
+                subtitlesSection: getEl('subtitles-section'),
+                audioSection: getEl('audio-section'), audioEnabled: getEl('audioEnabled'), 
+                audioFieldsContainer: getEl('audio-fields-container'),
+                videoSpecsSection: getEl('video-specs-section'),
+                imageSpecsSection: getEl('image-specs-section')
             };
             
             // --- State ---
@@ -177,19 +268,35 @@
             // --- UI Setup & Generation ---
             const setGenerationMode = (newMode) => {
                 generationMode = newMode;
-                dom.videoModeBtn.classList.toggle('active', newMode === 'video');
-                dom.imageModeBtn.classList.toggle('active', newMode === 'image');
-                dom.mainTitle.textContent = newMode === 'video' ? 'Video Prompt Builder' : 'Image Prompt Builder';
-                // Toggle visibility for video-only dropdowns
+                const isVideo = newMode === 'video';
+                
+                dom.videoModeBtn.classList.toggle('active', isVideo);
+                dom.imageModeBtn.classList.toggle('active', !isVideo);
+                dom.mainTitle.textContent = isVideo ? 'Video Prompt Builder' : 'Image Prompt Builder';
+                
+                // Toggle sections
+                dom.subtitlesSection.classList.toggle('hidden', !isVideo);
+                dom.audioSection.classList.toggle('hidden', !isVideo);
+                dom.videoSpecsSection.classList.toggle('hidden', !isVideo);
+                dom.imageSpecsSection.classList.toggle('hidden', isVideo);
+
+                // Toggle dropdowns within Visual Modifiers
                 const videoOnlyFields = ["Camera Movements", "Cinematic Techniques & Special Effects", "Editing & Transitions"];
                 videoOnlyFields.forEach(fieldName => {
                     const fieldId = fieldName.toLowerCase().replace(/[^a-z0-9]/g, '-');
                     const container = getEl(fieldId)?.parentElement;
                     if(container) {
-                        container.classList.toggle('hidden', newMode === 'image');
+                        container.classList.toggle('hidden', !isVideo);
                     }
                 });
                 updateJsonFromForm();
+            };
+
+            const toggleAudioFields = () => {
+                const isEnabled = dom.audioEnabled.checked;
+                dom.audioFieldsContainer.style.opacity = isEnabled ? '1' : '0.6';
+                dom.audioFieldsContainer.querySelectorAll('input, textarea, select').forEach(el => el.disabled = !isEnabled);
+                 updateJsonFromForm();
             };
 
             const populateDropdown = (selectElement, options, includeDefault = true, defaultText = 'Select...') => {
@@ -238,12 +345,19 @@
             };
             
             const buildCombinedPrompt = () => {
-                const data = getFormDataFromUI();
                 let promptParts = [];
+                
+                const categoryValue = dom.category.value;
+                if (categoryValue) {
+                    promptParts.push(categoryValue);
+                }
+
+                const data = getFormDataFromUI(true); 
 
                 if (data.details) {
                     promptParts = promptParts.concat(Object.values(data.details).filter(Boolean));
                 }
+                
                 if (data.modifiers) {
                     promptParts = promptParts.concat(Object.values(data.modifiers).filter(v => v));
                 }
@@ -252,18 +366,23 @@
             };
 
             // --- Core Application Logic (Form <-> JSON) ---
-            const getFormDataFromUI = () => {
-                const data = {};
+            const getFormDataFromUI = (excludePrompt = false) => {
+                const rawData = {};
                 const formFields = Array.from(dom.promptForm.querySelectorAll('[data-path]'));
 
                 formFields.forEach(el => {
-                    // Skip hidden fields in image mode
-                    if (generationMode === 'image' && el.closest('.hidden')) return;
-
+                    if (el.closest('.hidden')) return;
+                    
                     const path = el.dataset.path;
-                    let value = el.value.trim();
+                    let value;
 
-                    if (!value) return;
+                    if (el.type === 'checkbox') {
+                        value = el.checked;
+                    } else {
+                        value = el.value.trim();
+                    }
+
+                    if (!value && el.type !== 'checkbox') return;
                     
                     const set = (obj, p, val) => {
                         const keys = p.split('.');
@@ -272,42 +391,69 @@
                         });
                         obj[keys[keys.length - 1]] = val;
                     };
-                    set(data, path, value);
+                    set(rawData, path, value);
                 });
                 
-                return data;
+                // Build the final ordered object for JSON output
+                const finalData = {};
+                if (rawData.prompt) {
+                    finalData.prompt = rawData.prompt;
+                }
+                if (rawData.details) {
+                    finalData.details = rawData.details;
+                }
+                if (rawData.modifiers) {
+                    finalData.modifiers = rawData.modifiers;
+                }
+                if (generationMode === 'video') {
+                    if (rawData.subtitles) {
+                        finalData.subtitles = rawData.subtitles;
+                    }
+                    if (rawData.audio) {
+                        finalData.audio = rawData.audio;
+                    }
+                }
+                 if (rawData.specs) {
+                    finalData.specs = rawData.specs;
+                }
+
+                return finalData;
             };
 
             const populateUIFromData = (data) => {
                 dom.promptForm.reset();
                 dom.dynamicFieldsContainer.innerHTML = '';
 
-                if (data.category) {
-                    dom.category.value = data.category;
-                    updateDynamicFields(data.category);
-                }
-                
-                // Use a timeout to ensure dynamic fields are rendered before populating them
                 setTimeout(() => {
                     const get = (obj, path) => path.split('.').reduce((o, k) => (o || {})[k], obj);
-                    const formFields = Array.from(dom.promptForm.querySelectorAll('[data-path]'));
-
-                    formFields.forEach(el => {
+                    
+                    dom.promptForm.querySelectorAll('[data-path]').forEach(el => {
                          const path = el.dataset.path;
                          const value = get(data, path);
-                         if (el && value !== undefined && value !== null) {
+                         if (el.type === 'checkbox') {
+                            el.checked = !!value;
+                         } else if (el && value !== undefined && value !== null) {
                             el.value = value;
                          }
                     });
-                    buildCombinedPrompt();
+
+                    // We can't set the category from the loaded JSON anymore since it's merged.
+                    // This is an expected side-effect of the change.
+                    // Dynamic fields will need to be re-populated if the user changes the category dropdown.
+
+                    if (dom.audioEnabled) {
+                        toggleAudioFields();
+                    }
+                    
+                    if (!data.prompt) {
+                       buildCombinedPrompt();
+                    }
                 }, 100); 
             };
 
             const updateJsonFromForm = () => {
-                buildCombinedPrompt(); 
                 if (document.activeElement !== dom.jsonOutput) {
                     const jsonObject = getFormDataFromUI();
-                    jsonObject.mode = generationMode;
                     const jsonString = JSON.stringify(jsonObject, null, 2);
                     dom.jsonOutput.value = jsonString;
                 }
@@ -319,9 +465,6 @@
                 try {
                     const data = JSON.parse(jsonString);
                     populateUIFromData(data);
-                    if(data.mode) {
-                        setGenerationMode(data.mode);
-                    }
                     dom.jsonOutput.style.borderColor = 'transparent';
                 } catch (error) {
                     dom.jsonOutput.style.borderColor = '#ef4444'; 
@@ -364,12 +507,10 @@
             const copyJsonToClipboard = () => {
                 dom.jsonOutput.select();
                 try {
-                    // Using modern clipboard API with fallback
                     navigator.clipboard.writeText(dom.jsonOutput.value).then(() => {
                         dom.copyBtn.textContent = 'Copied!';
                         setTimeout(() => { dom.copyBtn.textContent = 'Copy JSON'; }, 2000);
                     }).catch(() => {
-                       // Fallback for older browsers
                        document.execCommand('copy');
                        dom.copyBtn.textContent = 'Copied!';
                        setTimeout(() => { dom.copyBtn.textContent = 'Copy JSON'; }, 2000);
@@ -415,7 +556,15 @@
                 });
 
                 // Bind Event Listeners
-                dom.promptForm.addEventListener('input', updateJsonFromForm);
+                dom.promptForm.addEventListener('input', (e) => {
+                    if (e.target.dataset.path === 'prompt') {
+                       updateJsonFromForm();
+                    } else {
+                       buildCombinedPrompt();
+                       updateJsonFromForm();
+                    }
+                });
+                
                 dom.jsonOutput.addEventListener('input', debouncedUpdateForm);
                 dom.videoModeBtn.addEventListener('click', () => setGenerationMode('video'));
                 dom.imageModeBtn.addEventListener('click', () => setGenerationMode('image'));
@@ -423,14 +572,17 @@
                 dom.loadJsonBtn.addEventListener('click', () => dom.fileInput.click());
                 dom.fileInput.addEventListener('change', loadJsonFromFile);
                 dom.copyBtn.addEventListener('click', copyJsonToClipboard);
+                dom.audioEnabled.addEventListener('change', toggleAudioFields);
                 
                 dom.category.addEventListener('change', (e) => {
                     updateDynamicFields(e.target.value);
+                    buildCombinedPrompt();
                     updateJsonFromForm();
                 });
 
                 // Initial setup
                 setGenerationMode('video');
+                toggleAudioFields();
                 updateJsonFromForm();
             };
             
