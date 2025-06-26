@@ -1,2 +1,2 @@
-# JSON Prompt Builder for Image and Video
+# Video & Image Prompt Builder to JSON
 by Julio A. Deckes and Gemini
