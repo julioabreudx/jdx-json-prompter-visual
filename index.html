@@ -327,18 +327,19 @@
     <script>
         // --- DOM Elements ---
         const getEl = (id) => document.getElementById(id);
-        const dom = {
-            videoModeBtn: getEl('videoModeBtn'), imageModeBtn: getEl('imageModeBtn'),
-            mainTitle: getEl('main-title'), promptForm: getEl('prompt-form'), jsonOutput: getEl('json-output'),
-            saveJsonBtn: getEl('saveJsonBtn'), loadJsonBtn: getEl('loadJsonBtn'),
-            fileInput: getEl('file-input'), copyBtn: getEl('copyBtn'), enhanceBtn: getEl('enhanceBtn'),
-            addManualCharacterBtn: getEl('addManualCharacterBtn'), addAiCharacterBtn: getEl('addAiCharacterBtn'),
-            suggestSceneBtn: getEl('suggestSceneBtn'), suggestAestheticsBtn: getEl('suggestAestheticsBtn'),
-            charactersContainer: getEl('characters-container'), audioFieldsContainer: getEl('audio-fields-container'),
-            fileNameInput: getEl('fileNameInput'),
-            audioEnabled: getEl('audioEnabled'),
-            category: getEl('category'),
-        };
+        const dom = {};
+        const allIds = [
+            'videoModeBtn', 'imageModeBtn', 'mainTitle', 'promptForm', 'jsonOutput',
+            'saveJsonBtn', 'loadJsonBtn', 'fileInput', 'copyBtn', 'enhanceBtn',
+            'addManualCharacterBtn', 'addAiCharacterBtn', 'suggestSceneBtn', 'suggestAestheticsBtn',
+            'charactersContainer', 'audioFieldsContainer', 'fileNameInput', 'category', 'prompt',
+            'timeOfDay', 'location', 'timePeriod', 'genre', 'foregroundDetails',
+            'backgroundDetails', 'aspectRatio', 'duration', 'fps', 'shotSize', 'cameraAngle',
+            'cameraMovement', 'lensType', 'focus', 'artisticStyle', 'mood', 'lighting',
+            'colorPalette', 'vfx', 'audioEnabled', 'backgroundAudio', 'music', 'enableSubtitles',
+            'quality', 'negativePrompt', 'seed'
+        ];
+        allIds.forEach(id => dom[id] = getEl(id));
         dom.formFields = Array.from(dom.promptForm.querySelectorAll('[data-path]'));
 
         // --- State ---
@@ -655,7 +656,7 @@
             };
         };
         const debouncedUpdateForm = debounce(updateFormFromJson, 500);
-        
+
         // --- INITIALIZATION ---
         function populateDropdown(selectElement, options) {
             selectElement.innerHTML = '';
@@ -677,7 +678,7 @@
 
             Object.keys(styleOptions).forEach(key => {
                  if (dom[key]) {
-                    populateDropdown(dom[key], ["Select...", ...styleOptions[key]]);
+                    populateDropdown(getEl(key), ["Select...", ...styleOptions[key]]);
                  }
             });
         }
