@@ -9,7 +9,6 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            transition: background-color 0.3s, color 0.3s, font-size 0.3s;
         }
         /* Custom scrollbar for a more modern look (dark mode specific) */
         ::-webkit-scrollbar {
@@ -63,7 +62,7 @@
             <h1 id="main-title" class="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 text-transparent bg-clip-text">
                 Video & Image Prompt Builder to JSON
             </h1>
-             <h2 class="text-gray-400">
+            <h2 class="text-gray-400">
                 Julio A. Deckes and Gemini
             </h2>
             <div class="mt-4 flex justify-center gap-4">
@@ -80,229 +79,218 @@
                 <h2 class="text-2xl font-semibold mb-6 text-gray-100 border-b border-gray-700 pb-3">Prompt Parameters</h2>
                 
                 <form id="prompt-form" class="space-y-6">
-                    <!-- Category Dropdown -->
-                    <div>
-                        <label for="category" class="block mb-2 text-sm font-medium text-gray-300">Category</label>
-                        <select id="category" class="form-select w-full p-3">
-                            <!-- Options will be populated by JavaScript -->
-                        </select>
-                    </div>
-
                     <!-- Main Prompt -->
                     <div>
                         <label for="prompt" class="block mb-2 text-sm font-medium text-gray-300">Main Prompt</label>
                         <div class="relative">
-                            <textarea id="prompt" data-path="prompt" rows="4" class="form-input w-full p-3 pr-28" placeholder="A cinematic wide shot of a futuristic cityscape at dusk..."></textarea>
+                            <textarea id="prompt" data-path="prompt" rows="4" class="w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-3 pr-28" placeholder="A cinematic wide shot of a futuristic cityscape at dusk..."></textarea>
                             <button type="button" id="enhanceBtn" class="absolute top-1/2 right-3 -translate-y-1/2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2 px-3 rounded-md flex items-center gap-1">
                                 ✨ Enhance
                             </button>
                         </div>
                     </div>
 
-                    <!-- Dynamic Fields Container -->
-                    <div id="dynamic-fields-container" class="space-y-6">
-                        
-                        <fieldset data-category-field="Product Showcase/Advertisement" class="fieldset border p-4 rounded-lg hidden">
-                             <legend class="text-lg font-semibold text-gray-200 px-2">Product Details</legend>
-                             <div class="mt-4">
-                                <label for="product" class="block mb-2 text-sm font-medium text-gray-300">Product</label>
-                                <input type="text" id="product" data-path="parameters.product.name" class="form-input w-full p-3" placeholder="e.g., The new Chrono-Watch">
-                            </div>
-                            <div class="mt-4">
-                                <label for="productDemonstration" class="block mb-2 text-sm font-medium text-gray-300">Demonstration</label>
-                                <input type="text" id="productDemonstration" data-path="parameters.product.demonstration" class="form-input w-full p-3" placeholder="e.g., showing its holographic display">
-                            </div>
-                        </fieldset>
+                    <!-- Characters -->
+                    <fieldset class="border border-gray-700 p-4 rounded-lg">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">Characters</legend>
+                        <div id="characters-container" class="space-y-4">
+                           </div>
+                        <div class="mt-4 flex gap-3">
+                            <button type="button" id="addManualCharacterBtn" class="text-sm bg-gray-700 hover:bg-gray-600 text-gray-200 font-medium py-2 px-4 rounded-lg">+ Add Character</button>
+                            <button type="button" id="addAiCharacterBtn" class="text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg flex items-center gap-2">✨ Add AI Character</button>
+                        </div>
+                    </fieldset>
 
-                        <fieldset data-category-field="all" class="fieldset border p-4 rounded-lg">
-                            <legend class="text-lg font-semibold text-gray-200 px-2">Characters</legend>
-                            <div id="characters-container" class="space-y-4">
+                    <!-- Time & Location -->
+                    <fieldset class="border border-gray-700 p-4 rounded-lg">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">Time & Location</legend>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div>
+                                <label for="timeOfDay" class="block mb-2 text-sm font-medium text-gray-300">Time of Day</label>
+                                <input type="text" id="timeOfDay" data-path="parameters.scene.timeOfDay" class="w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3" placeholder="Dawn, Dusk, Midday, Sunset, Night">
                             </div>
-                            <div class="mt-4 flex gap-3">
-                                <button type="button" id="addManualCharacterBtn" class="text-sm bg-gray-700 hover:bg-gray-600 text-gray-200 font-medium py-2 px-4 rounded-lg">+ Add Character</button>
-                                <button type="button" id="addAiCharacterBtn" class="text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg flex items-center gap-2">✨ Add AI Character</button>
+                            <div>
+                                <label for="location" class="block mb-2 text-sm font-medium text-gray-300">Location</label>
+                                <input type="text" id="location" data-path="parameters.scene.location" class="w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3" placeholder="A bustling market in Marrakech">
                             </div>
-                        </fieldset>
-
-                        <fieldset data-category-field="all" class="fieldset border p-4 rounded-lg">
-                            <legend class="text-lg font-semibold text-gray-200 px-2">Time & Location</legend>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                                <div>
-                                    <label for="timeOfDay" class="block mb-2 text-sm font-medium text-gray-300">Time of Day</label>
-                                    <input type="text" id="timeOfDay" data-path="parameters.scene.timeOfDay" class="form-input w-full p-3" placeholder="Dawn, Dusk, Midday, Sunset, Night">
-                                </div>
-                                <div>
-                                    <label for="location" class="block mb-2 text-sm font-medium text-gray-300">Location</label>
-                                    <input type="text" id="location" data-path="parameters.scene.location" class="form-input w-full p-3" placeholder="A bustling market in Marrakech">
-                                </div>
-                                <div>
-                                    <label for="timePeriod" class="block mb-2 text-sm font-medium text-gray-300">Time Period</label>
-                                    <select id="timePeriod" data-path="parameters.scene.timePeriod" class="form-select w-full p-3">
-                                        <option>Present</option>
-                                        <option>Past</option>
-                                        <option>Future</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="genre" class="block mb-2 text-sm font-medium text-gray-300">Genre</label>
-                                    <select id="genre" data-path="parameters.scene.genre" class="form-select w-full p-3">
-                                        <option>Realistic</option>
-                                        <option>Science Fiction</option>
-                                        <option>Dystopian</option>
-                                        <option>Fantasy</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </fieldset>
-
-                        <fieldset data-category-field="all" class="fieldset border p-4 rounded-lg">
-                            <legend class="text-lg font-semibold text-gray-200 px-2">Scene Details</legend>
-                                <div class="mt-2 text-right">
-                                    <button type="button" id="suggestSceneBtn" class="text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-3 rounded-md flex items-center gap-1 ml-auto">✨ Suggest Details</button>
-                                </div>
-                            <div class="mt-2">
-                                <label for="foregroundDetails" class="block mb-2 text-sm font-medium text-gray-300">Foreground Details</label>
-                                <textarea id="foregroundDetails" data-path="parameters.scene.foreground" rows="2" class="form-input w-full p-3" placeholder="e.g., Rain-slicked streets, a holographic ad flickering"></textarea>
-                            </div>
-                            <div class="mt-4">
-                                <label for="backgroundDetails" class="block mb-2 text-sm font-medium text-gray-300">Background Details</label>
-                                <textarea id="backgroundDetails" data-path="parameters.scene.background" rows="2" class="form-input w-full p-3" placeholder="e.g., Towering skyscrapers, flying vehicles in the distance"></textarea>
-                            </div>
-                        </fieldset>
-                        
-                        <fieldset data-category-field="all" class="fieldset border p-4 rounded-lg">
-                            <legend class="text-lg font-semibold text-gray-200 px-2">Aesthetics</legend>
-                            <div class="mt-2 text-right">
-                                <button type="button" id="suggestAestheticsBtn" class="text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-3 rounded-md flex items-center gap-1 ml-auto">✨ Suggest Aesthetics</button>
-                            </div>
-                             <div class="mt-2">
-                                 <label for="artisticStyle" class="block mb-2 text-sm font-medium text-gray-300">Artistic Style</label>
-                                 <select id="artisticStyle" data-path="parameters.aesthetics.style" class="form-select w-full p-3">
-                                 </select>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                                <div>
-                                    <label for="mood" class="block mb-2 text-sm font-medium text-gray-300">Mood</label>
-                                    <input type="text" id="mood" data-path="parameters.aesthetics.mood" class="form-input w-full p-3" placeholder="e.g., awe-inspiring, suspenseful">
-                                </div>
-                                <div>
-                                    <label for="lighting" class="block mb-2 text-sm font-medium text-gray-300">Lighting</label>
-                                     <select id="lighting" data-path="parameters.aesthetics.lighting" class="form-select w-full p-3">
-                                     </select>
-                                </div>
-                            </div>
-                            <div class="mt-4">
-                                 <label for="colorPalette" class="block mb-2 text-sm font-medium text-gray-300">Color Palette</label>
-                                 <select id="colorPalette" data-path="parameters.aesthetics.colorPalette" class="form-select w-full p-3">
-                                 </select>
-                            </div>
-                             <div class="mt-4">
-                                 <label for="vfx" class="block mb-2 text-sm font-medium text-gray-300">Visual Effects (VFX)</label>
-                                 <select id="vfx" data-path="parameters.aesthetics.vfx" class="form-select w-full p-3">
-                                 </select>
-                            </div>
-                        </fieldset>
-                        
-                        <fieldset data-category-field="all" class="fieldset border p-4 rounded-lg">
-                            <legend class="text-lg font-semibold text-gray-200 px-2">Cinematography</legend>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                                 <div>
-                                    <label for="shotSize" class="block mb-2 text-sm font-medium text-gray-300">Shot Size</label>
-                                    <select id="shotSize" data-path="parameters.cinematography.shotSize" class="form-select w-full p-3">
-                                    </select>
-                                </div>
-                                 <div>
-                                    <label for="cameraAngle" class="block mb-2 text-sm font-medium text-gray-300">Camera Angle</label>
-                                    <select id="cameraAngle" data-path="parameters.cinematography.cameraAngle" class="form-select w-full p-3">
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="mt-4 video-only-field">
-                                <label for="cameraMovement" class="block mb-2 text-sm font-medium text-gray-300">Camera Movement</label>
-                                <select id="cameraMovement" data-path="parameters.cinematography.cameraMovement" class="form-select w-full p-3">
+                            <div>
+                                <label for="timePeriod" class="block mb-2 text-sm font-medium text-gray-300">Time Period</label>
+                                <select id="timePeriod" data-path="parameters.scene.timePeriod" class="form-select w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3">
+                                    <option>Present</option>
+                                    <option>Past</option>
+                                    <option>Future</option>
                                 </select>
                             </div>
-                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                                <div>
-                                    <label for="lensType" class="block mb-2 text-sm font-medium text-gray-300">Lens Type</label>
-                                    <input type="text" id="lensType" data-path="parameters.cinematography.lensType" class="form-input w-full p-3" placeholder="e.g., 35mm, 85mm anamorphic">
-                                </div>
-                                 <div>
-                                    <label for="focus" class="block mb-2 text-sm font-medium text-gray-300">Focus / Aperture</label>
-                                    <input type="text" id="focus" data-path="parameters.cinematography.focus" class="form-input w-full p-3" placeholder="e.g., shallow depth of field, f/1.8">
-                                </div>
+                            <div>
+                                <label for="genre" class="block mb-2 text-sm font-medium text-gray-300">Genre</label>
+                                <select id="genre" data-path="parameters.scene.genre" class="form-select w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3">
+                                    <option>Realistic</option>
+                                    <option>Science Fiction</option>
+                                    <option>Dystopian</option>
+                                    <option>Fantasy</option>
+                                </select>
                             </div>
-                        </fieldset>
-                        
-                        <fieldset data-category-field="all" class="fieldset border p-4 rounded-lg">
-                            <legend class="text-lg font-semibold text-gray-200 px-2">Technical Parameters</legend>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                                <div>
-                                    <label for="aspectRatio" class="block mb-2 text-sm font-medium text-gray-300">Aspect Ratio</label>
-                                    <select id="aspectRatio" data-path="parameters.aspectRatio" class="form-select w-full p-3">
-                                        <option>16:9</option>
-                                        <option>9:16</option>
-                                        <option>1:1</option>
-                                        <option>4:3</option>
-                                        <option>2.39:1</option>
-                                    </select>
-                                </div>
-                                <div class="video-only-field">
-                                    <label for="duration" class="block mb-2 text-sm font-medium text-gray-300">Duration</label>
-                                    <input type="text" id="duration" data-path="parameters.duration" class="form-input w-full p-3" value="8s">
-                                </div>
-                                <div class="video-only-field">
-                                    <label for="fps" class="block mb-2 text-sm font-medium text-gray-300">FPS</label>
-                                    <input type="number" id="fps" data-path="parameters.fps" class="form-input w-full p-3" value="24">
-                                </div>
-                            </div>
-                        </fieldset>
+                        </div>
+                    </fieldset>
 
-                        <fieldset id="audio-fieldset" class="fieldset border p-4 rounded-lg video-only-field">
-                            <legend class="text-lg font-semibold text-gray-200 px-2">Audio</legend>
-                            <div class="space-y-4 mt-2">
-                                 <div class="flex items-center">
-                                    <input id="audioEnabled" data-path="parameters.audio.enabled" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-900 border-gray-700 rounded focus:ring-blue-500" checked>
-                                    <label for="audioEnabled" class="ml-2 text-sm font-medium text-gray-300">Audio Enabled</label>
+                    <!-- Scene Details -->
+                    <fieldset class="border border-gray-700 p-4 rounded-lg">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">Scene Details</legend>
+                            <div class="mt-2 text-right">
+                                <button type="button" id="suggestSceneBtn" class="text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-3 rounded-md flex items-center gap-1 ml-auto">✨ Suggest Details</button>
+                            </div>
+                        <div class="mt-2">
+                            <label for="foregroundDetails" class="block mb-2 text-sm font-medium text-gray-300">Foreground Details</label>
+                            <textarea id="foregroundDetails" data-path="parameters.scene.foreground" rows="2" class="w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3" placeholder="e.g., Rain-slicked streets, a holographic ad flickering"></textarea>
+                        </div>
+                        <div class="mt-4">
+                            <label for="backgroundDetails" class="block mb-2 text-sm font-medium text-gray-300">Background Details</label>
+                            <textarea id="backgroundDetails" data-path="parameters.scene.background" rows="2" class="w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3" placeholder="e.g., Towering skyscrapers, flying vehicles in the distance"></textarea>
+                        </div>
+                    </fieldset>
+                    
+                    <fieldset class="border border-gray-700 p-4 rounded-lg">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">Aesthetics</legend>
+                        <div class="mt-2 text-right">
+                            <button type="button" id="suggestAestheticsBtn" class="text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-3 rounded-md flex items-center gap-1 ml-auto">✨ Suggest Aesthetics</button>
+                        </div>
+                         <div class="mt-2">
+                             <label for="artisticStyle" class="block mb-2 text-sm font-medium text-gray-300">Artistic Style</label>
+                             <input type="text" id="artisticStyle" data-path="parameters.aesthetics.style" class="w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3" placeholder="e.g., hyperrealistic, anime, watercolor">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div>
+                                <label for="mood" class="block mb-2 text-sm font-medium text-gray-300">Mood</label>
+                                <input type="text" id="mood" data-path="parameters.aesthetics.mood" class="w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3" placeholder="e.g., awe-inspiring, suspenseful">
+                            </div>
+                            <div>
+                                <label for="lighting" class="block mb-2 text-sm font-medium text-gray-300">Lighting</label>
+                                <input type="text" id="lighting" data-path="parameters.aesthetics.lighting" class="w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3" placeholder="e.g., golden hour, neon glow, volumetric">
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                             <label for="colorPalette" class="block mb-2 text-sm font-medium text-gray-300">Color Palette</label>
+                             <input type="text" id="colorPalette" data-path="parameters.aesthetics.colorPalette" class="w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3" placeholder="e.g., saturated pastels, monochromatic blue">
+                        </div>
+                         <div class="mt-4">
+                             <label for="vfx" class="block mb-2 text-sm font-medium text-gray-300">Visual Effects (VFX)</label>
+                             <input type="text" id="vfx" data-path="parameters.aesthetics.vfx" class="w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3" placeholder="e.g., lens flare, light particles, film grain">
+                        </div>
+                    </fieldset>
+                    
+                    <fieldset class="border border-gray-700 p-4 rounded-lg">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">Cinematography</legend>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                             <div>
+                                <label for="shotSize" class="block mb-2 text-sm font-medium text-gray-300">Shot Size</label>
+                                <select id="shotSize" data-path="parameters.cinematography.shotSize" class="form-select w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3">
+                                    <option>extreme closeup</option>
+                                    <option>closeup</option>
+                                    <option>medium closeup</option>
+                                    <option>medium shot</option>
+                                    <option>medium full shot</option>
+                                    <option>full shot</option>
+                                    <option>wide shot</option>
+                                    <option>establishing shot</option>
+                                </select>
+                            </div>
+                             <div>
+                                <label for="cameraAngle" class="block mb-2 text-sm font-medium text-gray-300">Camera Angle</label>
+                                <select id="cameraAngle" data-path="parameters.cinematography.cameraAngle" class="form-select w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3">
+                                    <option>Low Angle</option>
+                                    <option>Eye Level</option>
+                                    <option>Shoulder Level</option>
+                                    <option>High Angle</option>
+                                    <option>Overhead / Bird's-eye view</option>
+                                    <option>Aerial</option>
+                                    <option>POV</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-4 video-only-field">
+                            <label for="cameraMovement" class="block mb-2 text-sm font-medium text-gray-300">Camera Movement</label>
+                            <input type="text" id="cameraMovement" data-path="parameters.cinematography.cameraMovement" class="w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3" placeholder="e.g., slow dolly zoom in">
+                        </div>
+                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div>
+                                <label for="lensType" class="block mb-2 text-sm font-medium text-gray-300">Lens Type</label>
+                                <input type="text" id="lensType" data-path="parameters.cinematography.lensType" class="w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3" placeholder="e.g., 35mm, 85mm anamorphic">
+                            </div>
+                             <div>
+                                <label for="focus" class="block mb-2 text-sm font-medium text-gray-300">Focus / Aperture</label>
+                                <input type="text" id="focus" data-path="parameters.cinematography.focus" class="w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3" placeholder="e.g., shallow depth of field, f/1.8">
+                            </div>
+                        </div>
+                    </fieldset>
+                    
+                    <fieldset class="border border-gray-700 p-4 rounded-lg">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">Technical Parameters</legend>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                            <div>
+                                <label for="aspectRatio" class="block mb-2 text-sm font-medium text-gray-300">Aspect Ratio</label>
+                                <select id="aspectRatio" data-path="parameters.aspectRatio" class="form-select w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3">
+                                    <option>16:9</option>
+                                    <option>9:16</option>
+                                    <option>1:1</option>
+                                    <option>4:3</option>
+                                    <option>2.39:1</option>
+                                </select>
+                            </div>
+                            <div class="video-only-field">
+                                <label for="duration" class="block mb-2 text-sm font-medium text-gray-300">Duration</label>
+                                <input type="text" id="duration" data-path="parameters.duration" class="w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3" value="8s">
+                            </div>
+                            <div class="video-only-field">
+                                <label for="fps" class="block mb-2 text-sm font-medium text-gray-300">FPS</label>
+                                <input type="number" id="fps" data-path="parameters.fps" class="w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3" value="24">
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset id="audio-fieldset" class="border border-gray-700 p-4 rounded-lg video-only-field">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">Audio</legend>
+                        <div class="space-y-4 mt-2">
+                             <div class="flex items-center">
+                                <input id="audioEnabled" data-path="parameters.audio.enabled" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-900 border-gray-700 rounded focus:ring-blue-500" checked>
+                                <label for="audioEnabled" class="ml-2 text-sm font-medium text-gray-300">Audio Enabled</label>
+                            </div>
+                            <div id="audio-fields-container">
+                                 <div class="mt-4">
+                                    <label for="backgroundAudio" class="block mb-2 text-sm font-medium text-gray-300">Background Audio</label>
+                                    <input type="text" id="backgroundAudio" data-path="parameters.audio.backgroundAudio" class="w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3" placeholder="e.g., sound of rain, distant sirens">
                                 </div>
-                                <div id="audio-fields-container">
-                                     <div class="mt-4">
-                                        <label for="backgroundAudio" class="block mb-2 text-sm font-medium text-gray-300">Background Audio</label>
-                                        <input type="text" id="backgroundAudio" data-path="parameters.audio.backgroundAudio" class="form-input w-full p-3" placeholder="e.g., sound of rain, distant sirens">
-                                    </div>
-                                     <div class="mt-4">
-                                        <label for="music" class="block mb-2 text-sm font-medium text-gray-300">Music</label>
-                                        <input type="text" id="music" data-path="parameters.audio.music" class="form-input w-full p-3" placeholder="e.g., tense synthwave track">
-                                    </div>
-                                     <div class="flex items-center mt-4">
-                                        <input id="enableSubtitles" data-path="parameters.audio.subtitles" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-900 border-gray-700 rounded focus:ring-blue-500">
-                                        <label for="enableSubtitles" class="ml-2 text-sm font-medium text-gray-300">Enable Subtitles</label>
-                                    </div>
+                                 <div class="mt-4">
+                                    <label for="music" class="block mb-2 text-sm font-medium text-gray-300">Music</label>
+                                    <input type="text" id="music" data-path="parameters.audio.music" class="w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3" placeholder="e.g., tense synthwave track">
+                                </div>
+                                 <div class="flex items-center mt-4">
+                                    <input id="enableSubtitles" data-path="parameters.audio.subtitles" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-900 border-gray-700 rounded focus:ring-blue-500">
+                                    <label for="enableSubtitles" class="ml-2 text-sm font-medium text-gray-300">Enable Subtitles</label>
                                 </div>
                             </div>
-                        </fieldset>
+                        </div>
+                    </fieldset>
 
-                         <fieldset class="fieldset border p-4 rounded-lg">
-                            <legend class="text-lg font-semibold text-gray-200 px-2">Advanced</legend>
-                                <div class="mt-4">
-                                    <label for="quality" class="block mb-2 text-sm font-medium text-gray-300">Quality</label>
-                                    <input type="text" id="quality" data-path="parameters.quality" class="form-input w-full p-3" placeholder="e.g., 4K, photorealistic, high detail">
-                                </div>
-                                <div class="mt-4">
-                                    <label for="negativePrompt" class="block mb-2 text-sm font-medium text-gray-300">Negative Prompt</label>
-                                    <input type="text" id="negativePrompt" data-path="parameters.advanced.negativePrompt" class="form-input w-full p-3" placeholder="blurry, low-resolution, cartoonish">
-                                </div>
-                                <div class="mt-4">
-                                     <label for="seed" class="block mb-2 text-sm font-medium text-gray-300">Seed</label>
-                                     <input type="number" id="seed" data-path="parameters.advanced.seed" class="form-input w-full p-3" placeholder="42">
-                                </div>
-                        </fieldset>
-                    </div>
+                     <fieldset class="border border-gray-700 p-4 rounded-lg">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">Advanced</legend>
+                            <div class="mt-4">
+                                <label for="quality" class="block mb-2 text-sm font-medium text-gray-300">Quality</label>
+                                <input type="text" id="quality" data-path="parameters.quality" class="w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3" placeholder="e.g., 4K, photorealistic, high detail">
+                            </div>
+                            <div class="mt-4">
+                                <label for="negativePrompt" class="block mb-2 text-sm font-medium text-gray-300">Negative Prompt</label>
+                                <input type="text" id="negativePrompt" data-path="parameters.advanced.negativePrompt" class="w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3" placeholder="blurry, low-resolution, cartoonish">
+                            </div>
+                            <div class="mt-4">
+                                <label for="seed" class="block mb-2 text-sm font-medium text-gray-300">Seed</label>
+                                <input type="number" id="seed" data-path="parameters.advanced.seed" class="w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3" placeholder="42">
+                            </div>
+                    </fieldset>
                 </form>
             </div>
 
             <!-- Right Column: JSON Output -->
-            <div class="json-panel bg-gray-800 p-6 rounded-xl shadow-lg h-full flex flex-col">
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg h-full flex flex-col">
                 <div class="flex justify-between items-center border-b border-gray-700 pb-3 mb-6">
                     <h2 id="output-panel-title" class="text-2xl font-semibold text-gray-100">Generated / Editable JSON</h2>
                 </div>
@@ -313,7 +301,7 @@
                          <input type="file" id="file-input" class="hidden" accept=".json">
                      </div>
                      <div class="flex items-center gap-2">
-                         <input type="text" id="fileNameInput" class="form-input w-full p-3" placeholder="prompt.json">
+                         <input type="text" id="fileNameInput" class="w-full bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg p-3" placeholder="prompt.json">
                          <button id="saveJsonBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-300">Save</button>
                      </div>
                 </div>
@@ -327,53 +315,23 @@
     <script>
         // --- DOM Elements ---
         const getEl = (id) => document.getElementById(id);
-        const dom = {};
-        const allIds = [
-            'videoModeBtn', 'imageModeBtn', 'mainTitle', 'promptForm', 'jsonOutput',
-            'saveJsonBtn', 'loadJsonBtn', 'fileInput', 'copyBtn', 'enhanceBtn',
-            'addManualCharacterBtn', 'addAiCharacterBtn', 'suggestSceneBtn', 'suggestAestheticsBtn',
-            'charactersContainer', 'audioFieldsContainer', 'fileNameInput', 'category', 'prompt',
-            'timeOfDay', 'location', 'timePeriod', 'genre', 'foregroundDetails',
-            'backgroundDetails', 'aspectRatio', 'duration', 'fps', 'shotSize', 'cameraAngle',
-            'cameraMovement', 'lensType', 'focus', 'artisticStyle', 'mood', 'lighting',
-            'colorPalette', 'vfx', 'audioEnabled', 'backgroundAudio', 'music', 'enableSubtitles',
-            'quality', 'negativePrompt', 'seed'
-        ];
-        allIds.forEach(id => dom[id] = getEl(id));
-        dom.formFields = Array.from(dom.promptForm.querySelectorAll('[data-path]'));
+        const dom = {
+            videoModeBtn: getEl('videoModeBtn'), imageModeBtn: getEl('imageModeBtn'),
+            mainTitle: getEl('main-title'), promptForm: getEl('prompt-form'), jsonOutput: getEl('json-output'),
+            saveJsonBtn: getEl('saveJsonBtn'), loadJsonBtn: getEl('loadJsonBtn'),
+            fileInput: getEl('file-input'), copyBtn: getEl('copyBtn'), enhanceBtn: getEl('enhanceBtn'),
+            addManualCharacterBtn: getEl('addManualCharacterBtn'), addAiCharacterBtn: getEl('addAiCharacterBtn'),
+            suggestSceneBtn: getEl('suggestSceneBtn'), suggestAestheticsBtn: getEl('suggestAestheticsBtn'),
+            charactersContainer: getEl('characters-container'), audioFieldsContainer: getEl('audio-fields-container'),
+            fileNameInput: getEl('fileNameInput'),
+            audioEnabled: getEl('audioEnabled'),
+        };
 
         // --- State ---
         let generationMode = 'video';
 
-        // --- Prompt Data ---
-        const promptTemplates = [
-             { category: "Select a Category...", prompts: [""] },
-             { category: "Cinematic Movie Scene", prompts: ["{Genre/setting}, {Main character/subject}, {Action}, {Environment details}, {Mood}, {Camera techniques}, {Lighting style}"] },
-             { category: "Animation/Cartoon Sequence", prompts: ["{Animation style}, {Characters/creatures}, {Action/story}, {Visual style}, {Stylistic influences}, {Camera movements}, {Lighting conditions}"] },
-             { category: "Fashion Show Runway", prompts: ["{Venue/theme}, {Model(s) and attire}, {Actions/poses}, {Atmosphere}, {Camera work}, {Lighting descriptors}, {Overall vibe}"] },
-             { category: "Product Showcase/Advertisement", prompts: ["{Product}, {Setting/backdrop}, {Demonstration}, {Visual style}, {Text/graphics overlays}, {Camera movements}, {Brand style}"] },
-             { category: "Nature Documentary Segment", prompts: ["{Location and time}, {Subject}, {Action/behavior}, {Sensory details}, {Camera style}, {Lighting conditions}, {Narrative tone}"] },
-             { category: "Travel Vlog or Adventure Video", prompts: ["{Destination/setting}, {Traveler/host}, {Activities/sights}, {Shot variety}, {Atmosphere}, {Text/voice-over style}, {Tone}"] },
-             { category: "Music Video Performance", prompts: ["{Artist/band}, {Performance setting}, {Camera movements}, {Lighting}, {Concept/storyline elements}, {Visual alignment}"] },
-             { category: "Sports Highlight or Action Sequence", prompts: ["{Sport/action}, {Main athlete/participants}, {Moment/skill}, {Camera techniques}, {Dynamic angles}, {Crowd/stadium effects}, {Pacing}"] },
-             { category: "News Report or Broadcast Segment", prompts: ["{Context}, {Anchor/reporter}, {Topic}, {Camera angles}, {Graphics/headlines}, {Props/surroundings}, {Tone}"] },
-             { category: "Educational Explainer or Tutorial", prompts: ["{Topic}, {Presenter/format}, {Setting}, {Visual elements}, {Demonstration focus}, {Camera focus}, {Style/tone}"] },
-             { category: "Video Game Cinematic / Fantasy Cutscene", prompts: ["{Theme/genre}, {Characters/heroes}, {Environment}, {Action/dialogue}, {Camera techniques}, {Visual effects}, {Cinematic quality}"] },
-             { category: "Historical Drama Scene", prompts: ["{Era/setting}, {Characters}, {Event/action}, {Authentic visuals}, {Color tones}, {Camera work}"] }
-        ];
-
-        const styleOptions = {
-            artisticStyle: ["Cinematic", "Filmic", "Photorealistic", "Hyper-realistic", "Surreal", "Abstract", "Stylized", "Minimalist", "Maximalist", "Cartoonish", "Anime-style", "Comic book style", "Cyberpunk", "Steampunk", "Noir", "Vintage retro", "Modern sleek", "Futuristic", "High-tech holographic", "Dystopian", "Utopian", "Grunge", "Psychedelic", "Whimsical", "Epic scale", "Intimate", "Magical realism", "Baroque", "Fantasy art style", "Realistic CGI", "Hand-drawn", "Cel-shaded", "Vaporwave", "Experimental"],
-            lighting: ["Natural lighting", "Soft lighting", "Hard lighting", "Warm lighting", "Cool lighting", "High-key lighting", "Low-key lighting", "Key light", "Fill light", "Back lighting", "Rim lighting", "Side lighting", "Top lighting", "Underlighting", "Ambient light", "Practical lighting", "Motivated lighting", "Studio lighting", "Stage spotlight", "Neon lighting", "Candlelight", "Firelight", "Golden hour", "Blue hour", "Moonlight", "Silhouette lighting", "Chiaroscuro", "Volumetric light", "Flashing strobe", "Color gel lighting", "High contrast lighting", "Flat lighting", "Dappled light", "UV/Blacklight"],
-            colorPalette: ["Warm tones", "Cool tones", "Vibrant colors", "Saturated", "Desaturated", "Muted palette", "Monochrome", "Black and white", "Sepia", "High contrast", "Low contrast", "Pastel tones", "Neon colors", "Earth tones", "Teal and orange", "Bleach bypass", "Teal and orange contrast", "Cool blue tint", "Golden tint", "Color pop", "Retro color grading", "Cross-processed colors", "Duo-tone", "Rainbow palette", "Moody blue tones", "Greyscale", "Infrared palette", "High saturation", "Filmic colors", "Cartoon bright", "Comic book coloring", "Vibrant HDR", "Gothic muted"],
-            cameraMovement: ["Static shot", "Pan", "Tilt", "Zoom in", "Zoom out", "Dolly in", "Dolly out", "Tracking shot", "Trucking shot", "Crane shot", "Jib shot", "Steadicam shot", "Handheld shot", "Gimbal shot", "Drone shot", "Aerial shot", "Arc shot", "Whip pan", "Whip tilt", "Rack focus", "Push in", "Pull out", "360-degree shot", "POV moving shot", "Tracking POV", "Long take / Oner", "Slow motion movement", "Time-lapse pan", "Tabletop spin", "Vertigo shot", "Pedestal move", "Tilt-pan combination", "Roll"],
-            shotSize: ["Eye-level shot", "High-angle shot", "Low-angle shot", "Bird’s-eye view", "Worm’s-eye view", "Dutch angle", "Over-the-shoulder (OTS) shot", "Point-of-view (POV) shot", "First-person perspective", "Aerial perspective", "Overhead shot", "Close-up (CU)", "Extreme close-up (ECU)", "Medium shot", "Medium close-up", "Medium long shot", "Long shot / Wide shot", "Extreme wide shot", "Establishing shot", "Two-shot", "Three-shot", "Group shot", "Overhead two-shot", "Master shot", "Cut-in shot", "Cutaway shot", "Reaction shot", "Insert shot", "Lock-down shot", "OTS dialog shot", "Panoramic shot", "Tilted shot"],
-            cameraAngle: ["Eye-level shot", "High-angle shot", "Low-angle shot", "Bird’s-eye view", "Worm’s-eye view", "Dutch angle", "Over-the-shoulder (OTS) shot", "Point-of-view (POV) shot", "First-person perspective", "Aerial perspective", "Overhead shot"],
-            vfx: ["Bokeh", "Shallow depth of field", "Rack focus", "Lens flare", "Anamorphic lens flare", "Fish-eye distortion", "Wide-angle distortion", "Telephoto compression", "Macro close-up", "Tilt-shift effect", "Soft focus filter", "Diffusion glow", "Vignette", "Film grain", "Film burn", "VHS glitch", "Chromatic aberration", "High dynamic range (HDR) effect", "Sepia filter", "Noir filter", "Color grading filter", "Infrared filter", "X-ray effect", "Heat vision/thermal effect", "Night vision effect", "Motion blur", "Long exposure light trails", "Double exposure", "Ghosting", "Kaleidoscope effect", "Holographic overlay", "Vintage film filter"]
-        };
-
         // --- Gemini API Configuration ---
-        const apiKey = "YOUR_API_KEY_HERE";
+        const apiKey = "YOUR_API_KEY_HERE"; // IMPORTANT: Add your API key here to run outside Gemini
         const textApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
 
         // --- Helper Functions ---
@@ -417,29 +375,18 @@
                     <button type="button" class="text-red-400 hover:text-red-300 text-xs font-bold" onclick="this.parentElement.parentElement.remove(); updateJsonFromForm();">REMOVE</button>
                 </div>
                 <div class="space-y-2">
-                    <input type="text" class="char-name form-input w-full p-3" placeholder="Character Name (optional)" value="${name}">
-                    <input type="text" class="char-desc form-input w-full p-3" placeholder="Character Description (e.g., A cyborg detective)" value="${description}">
-                    <input type="text" class="char-expression form-input w-full p-3" placeholder="Expression (e.g., smiling, determined)" value="${expression}">
-                    <input type="text" class="char-action form-input w-full p-3" placeholder="Action (e.g., typing on a keyboard)" value="${action}">
+                    <input type="text" class="char-name w-full bg-gray-800 border border-gray-600 text-gray-100 text-sm rounded-lg p-3" placeholder="Character Name (optional)" value="${name}">
+                    <input type="text" class="char-desc w-full bg-gray-800 border border-gray-600 text-gray-100 text-sm rounded-lg p-3" placeholder="Character Description (e.g., A cyborg detective)" value="${description}">
+                    <input type="text" class="char-expression w-full bg-gray-800 border border-gray-600 text-gray-100 text-sm rounded-lg p-3" placeholder="Expression (e.g., smiling, determined)" value="${expression}">
+                    <input type="text" class="char-action w-full bg-gray-800 border border-gray-600 text-gray-100 text-sm rounded-lg p-3" placeholder="Action (e.g., typing on a keyboard)" value="${action}">
                     <div class="char-speech-field ${speechHiddenClass}">
-                        <textarea class="char-speech form-input w-full p-3" rows="2" placeholder="Character's Speech (optional)">${speech}</textarea>
+                        <textarea class="char-speech w-full bg-gray-800 border border-gray-600 text-gray-100 text-sm rounded-lg p-3" rows="2" placeholder="Character's Speech (optional)">${speech}</textarea>
                     </div>
                 </div>
             `;
             dom.charactersContainer.appendChild(characterDiv);
             updateJsonFromForm();
         };
-        
-        const updateDynamicFields = (category) => {
-             document.querySelectorAll('[data-category-field]').forEach(field => {
-                 const fieldCategory = field.getAttribute('data-category-field');
-                 if (fieldCategory === 'all' || fieldCategory === category) {
-                     field.classList.remove('hidden');
-                 } else {
-                     field.classList.add('hidden');
-                 }
-             });
-        }
 
         // --- Gemini API Call Functions ---
         async function callGeminiForText(systemInstruction, userPrompt, button) {
@@ -526,26 +473,27 @@
         // --- Core Application Logic (Form <-> JSON) ---
         function getFormDataFromUI() {
             const data = {};
-            dom.formFields.forEach(el => {
+            document.querySelectorAll('#prompt-form [data-path]').forEach(el => {
                 const path = el.dataset.path;
-                if (!path || (el.closest('.video-only-field') && generationMode === 'image')) return;
-
                 let value;
+                if(el.closest('.video-only-field') && generationMode === 'image') return;
+                
                 if (el.type === 'checkbox') value = el.checked;
                 else if (el.type === 'number') value = el.value ? parseInt(el.value, 10) : null;
                 else value = el.value.trim() || null;
 
-                if (value === null || value === 'Select...') return;
+                if (value === null) return;
                 
-                // Set nested property using a helper function
-                const set = (obj, path, val) => {
-                    const keys = path.split('.');
-                    keys.slice(0, -1).forEach((key, i) => {
-                        obj = obj[key] = obj[key] || {};
-                    });
-                    obj[keys[keys.length - 1]] = val;
-                };
-                set(data, path, value);
+                let current = data;
+                const keys = path.split('.');
+                keys.forEach((key, index) => {
+                    if (index === keys.length - 1) {
+                        current[key] = value;
+                    } else {
+                        current[key] = current[key] || {};
+                        current = current[key];
+                    }
+                });
             });
 
             const characters = Array.from(dom.charactersContainer.children).map(div => {
@@ -556,10 +504,8 @@
                     action: div.querySelector('.char-action').value.trim() || null,
                 };
                 if (generationMode === 'video') charData.speech = div.querySelector('.char-speech').value.trim() || null;
-                // remove null values
-                Object.keys(charData).forEach(key => charData[key] == null && delete charData[key]);
                 return charData;
-            }).filter(c => Object.keys(c).length > 0);
+            }).filter(c => c.description || c.name);
             
             if (characters.length > 0) {
                  if(!data.parameters) data.parameters = {};
@@ -572,12 +518,14 @@
         function populateUIFromData(data) {
             dom.promptForm.reset();
             dom.charactersContainer.innerHTML = '';
-            
-            const get = (obj, path) => path.split('.').reduce((o, k) => (o || {})[k], obj);
 
-            dom.formFields.forEach(el => {
+            document.querySelectorAll('#prompt-form [data-path]').forEach(el => {
                 const path = el.dataset.path;
-                const value = get(data, path);
+                const keys = path.split('.');
+                let value = data;
+                for (const key of keys) {
+                    value = value ? value[key] : undefined;
+                }
                 if (el.type === 'checkbox') el.checked = !!value;
                 else el.value = value || '';
             });
@@ -658,31 +606,6 @@
         const debouncedUpdateForm = debounce(updateFormFromJson, 500);
 
         // --- INITIALIZATION ---
-        function populateDropdown(selectElement, options) {
-            selectElement.innerHTML = '';
-            options.forEach(option => {
-                const opt = document.createElement('option');
-                opt.value = option;
-                opt.textContent = option;
-                selectElement.appendChild(opt);
-            });
-        }
-        
-        function initDropdowns() {
-            promptTemplates.forEach(item => {
-                const option = document.createElement('option');
-                option.value = item.prompts[0];
-                option.textContent = item.category;
-                dom.category.appendChild(option);
-            });
-
-            Object.keys(styleOptions).forEach(key => {
-                 if (dom[key]) {
-                    populateDropdown(getEl(key), ["Select...", ...styleOptions[key]]);
-                 }
-            });
-        }
-        
         function bindEventListeners() {
             dom.promptForm.addEventListener('input', updateJsonFromForm);
             dom.jsonOutput.addEventListener('input', debouncedUpdateForm);
@@ -698,26 +621,6 @@
             dom.loadJsonBtn.addEventListener('click', () => dom.fileInput.click());
             dom.fileInput.addEventListener('change', loadJsonFromFile);
             
-            dom.category.addEventListener('change', (e) => {
-                const selectedCategory = e.target.options[e.target.selectedIndex].text;
-                if (e.target.value) {
-                    dom.prompt.value = e.target.value;
-                }
-                updateDynamicFields(selectedCategory);
-                updateJsonFromForm();
-            });
-
-            ['artisticStyle', 'lighting', 'colorPalette', 'vfx', 'shotSize', 'cameraAngle', 'cameraMovement'].forEach(id => {
-                if (dom[id]) {
-                    dom[id].addEventListener('change', (e) => {
-                        if (e.target.value !== 'Select...') {
-                           dom.prompt.value += `, ${e.target.value}`;
-                           updateJsonFromForm();
-                        }
-                    });
-                }
-            });
-
             dom.copyBtn.addEventListener('click', () => {
                 const textToCopy = dom.jsonOutput.value;
                 const textArea = document.createElement('textarea');
@@ -740,7 +643,6 @@
         
         function init() {
             bindEventListeners();
-            initDropdowns();
             addCharacter(); // Start with one character field
             setGenerationMode('video');
         }
