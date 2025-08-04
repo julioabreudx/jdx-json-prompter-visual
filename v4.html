@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Scene 3D Prompt Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+        .form-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239CA3AF' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em;
+            -webkit-appearance: none; -moz-appearance: none; appearance: none;
+        }
+        .form-input, .form-textarea, .form-select {
+             background-color: #1f2937; border: 1px solid #374151;
+             border-radius: 0.5rem; color: #d1d5db;
+        }
+        .form-input::placeholder, .form-textarea::placeholder { color: #6b7280; }
+        .mode-btn.active, .transform-mode-btn.active { background-color: #4f46e5; color: white; }
+        .hidden { display: none !important; }
+        .dynamic-item, .scene-block { border-left: 2px solid #374151; }
+        .transform-canvas { width: 100%; height: 250px; background-color: #111827; border-radius: 0.5rem; cursor: grab; }
+        .transform-canvas:active { cursor: grabbing; }
+        input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; background: #4b5563; border-radius: 2px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; background: #a5b4fc; border-radius: 50%; cursor: pointer; }
+        input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; background: #a5b4fc; border-radius: 50%; cursor: pointer; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 relative">
+        <header class="text-center mb-8">
+            <h1 id="main-title" class="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-400 via-indigo-400 to-blue-400 text-transparent bg-clip-text">
+                Advanced Video & Image Prompt Builder
+            </h1>
+            <p class="text-gray-400 mt-2">Craft detailed, structured prompts and export to JSON.</p>
+             <div class="mt-6 flex justify-center gap-2">
+                <div class="inline-flex rounded-lg bg-gray-800 p-1">
+                    <button id="videoModeBtn" class="mode-btn active px-4 py-2 text-sm font-semibold rounded-md transition-colors">Video</button>
+                    <button id="imageModeBtn" class="mode-btn px-4 py-2 text-sm font-semibold rounded-md transition-colors text-gray-400">Image</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Left Column: Input Form -->
+            <div id="form-panel" class="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-gray-700 self-start">
+                <form id="prompt-form" class="space-y-6">
+                    <div id="scenes-container" class="space-y-8">
+                        <!-- Scenes will be dynamically inserted here -->
+                    </div>
+                    <button type="button" id="addSceneBtn" class="w-full text-md bg-green-600/80 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition">+ Add Scene</button>
+                </form>
+            </div>
+
+            <!-- Right Column: JSON Output -->
+            <div class="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-gray-700 h-full flex flex-col">
+                <div class="flex justify-between items-center border-b border-gray-700 pb-3 mb-6">
+                    <h2 class="text-2xl font-semibold text-gray-100">JSON Output</h2>
+                </div>
+                 <div class="mb-4 space-y-3">
+                     <div class="flex items-center gap-3">
+                         <button id="copyBtn" class="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-200 font-medium py-2.5 px-4 rounded-lg transition duration-300">Copy JSON</button>
+                         <button id="loadJsonBtn" class="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-200 font-medium py-2.5 px-4 rounded-lg transition duration-300">Load from File</button>
+                         <input type="file" id="file-input" class="hidden" accept=".json">
+                     </div>
+                     <div class="flex items-center gap-3">
+                         <input type="text" id="fileNameInput" class="form-input w-full p-2.5" value="prompt.json">
+                         <button id="saveJsonBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-5 rounded-lg transition duration-300">Save</button>
+                     </div>
+                </div>
+                <div class="flex-grow bg-gray-900 rounded-lg p-1 overflow-auto">
+                    <textarea id="json-output" class="w-full h-full min-h-[400px] bg-transparent text-sm text-green-300 rounded-lg p-3 resize-none border-none outline-none shadow-none"></textarea>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script type="module">
+        // Import Three.js and its modules
+        import * as THREE from 'https://cdn.skypack.dev/three@0.128.0';
+        import { OrbitControls } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/controls/OrbitControls.js';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DATA DEFINITIONS ---
+            const visualData = {
+                artDirection: [
+                    { field: "Overall Aesthetic", dropdown: ["Cinematic", "Filmic", "Photorealistic", "Hyper-realistic", "Surreal", "Abstract", "Stylized", "Minimalist", "Maximalist", "Grunge", "Psychedelic", "Whimsical", "Epic scale", "Intimate", "Magical realism", "Baroque", "Fantasy art style", "Vaporwave", "Experimental"] },
+                    { field: "Genre & Theme", dropdown: ["Science fiction", "Fantasy", "Horror", "Thriller", "Mystery", "Romance", "Comedy", "Action/Adventure", "Superhero", "Noir detective", "Western", "Post-apocalyptic", "Dystopian", "Utopian", "Medieval", "Historical drama", "War film", "Spy/Espionage", "Crime drama", "Mythological", "Steampunk", "Cyberpunk", "Space opera", "Zombie apocalypse", "Supernatural", "Fairy tale", "Slice of life", "Musical", "Documentary style", "Film noir"] },
+                    { field: "Color & Tone", dropdown: ["Vibrant colors", "Saturated", "Desaturated", "Muted palette", "Monochrome", "Black and white", "Sepia", "High contrast colors", "Low contrast colors", "Pastel tones", "Neon colors", "Earth tones", "Teal and orange", "Bleach bypass", "Golden tint", "Color pop", "Retro color grading", "Cross-processed", "Duo-tone", "Moody blue tones"] },
+                    { field: "Animation Style", dropdown: ["2D animation", "3D animation", "Hand-drawn", "Anime", "Cartoon", "Motion graphics", "Stop-motion", "Claymation", "Live-action", "Mixed media", "Rotoscoping", "Cut-out animation", "Pixel art", "Low-poly CGI", "Vector art", "CGI realism", "Cel animation", "Whiteboard animation", "Unreal Engine cinematic"] },
+                    { field: "Composition", dropdown: ["Rule of thirds", "Centered composition", "Symmetrical framing", "Asymmetrical", "Leading lines", "Frame within a frame", "Shallow depth of field", "Deep focus", "Negative space", "Filled frame", "Golden ratio", "Triangular composition", "Silhouette composition"] }
+                ],
+                cinematography: [
+                    { field: "Lighting Style", dropdown: ["Natural lighting", "Soft light", "Hard light", "High-key", "Low-key", "Backlight", "Rim lighting", "Side lighting", "Ambient light", "Practical lighting", "Neon lighting", "Candlelight", "Golden hour", "Blue hour", "Moonlight", "Silhouette", "Chiaroscuro", "Volumetric light", "Flashing strobe", "Color gel lighting", "Dappled light"] },
+                    { field: "Camera Movement", dropdown: ["Static shot", "Pan", "Tilt", "Zoom in/out", "Dolly in/out", "Tracking shot", "Crane shot", "Steadicam", "Handheld shaky", "Gimbal", "Drone/Aerial", "Arc shot", "Whip pan", "Push in", "Pull out", "360-degree shot", "Slow motion movement", "Vertigo shot (dolly zoom)"] },
+                    { field: "Shot Type & Angle", dropdown: ["Eye-level", "High-angle", "Low-angle", "Bird’s-eye view", "Dutch angle", "Over-the-shoulder (OTS)", "Point-of-view (POV)", "Close-up (CU)", "Extreme close-up (ECU)", "Medium shot", "Long shot / Wide shot", "Establishing shot", "Two-shot", "Reaction shot", "Insert shot"] },
+                    { field: "Lens & Filter Effects", dropdown: ["Bokeh", "Lens flare", "Anamorphic flare", "Fish-eye distortion", "Wide-angle distortion", "Telephoto compression", "Macro", "Tilt-shift", "Soft focus", "Vignette", "Film grain", "VHS glitch", "Chromatic aberration", "HDR effect", "Motion blur", "Long exposure", "Double exposure", "Kaleidoscope"] },
+                    { field: "Editing & Special Effects", dropdown: ["Slow motion", "Fast motion", "Time-lapse", "Freeze frame", "Bullet time", "Montage", "Split screen", "Match cut", "Jump cut", "Crossfade/Dissolve", "Fade to black", "Dream sequence", "Flashback", "CGI effects", "Practical effects", "Pyrotechnics", "Speed ramping"] },
+                    { field: "Film Format & Texture", dropdown: ["35mm film", "16mm film", "8mm film", "VHS look", "4K UHD", "IMAX format", "Found footage style", "Newsreel style", "Polaroid look", "Overexposed", "Underexposed", "Dust and scratches", "Clean digital", "Cinemascope"] },
+                    { field: "Shutter Angle", dropdown: ["180d", "90d", "270d", "360d", "45d", "1d (no motion blur)"] }
+                ]
+            };
+
+            // --- DOM Elements ---
+            const getEl = (id) => document.getElementById(id);
+            const dom = {
+                videoModeBtn: getEl('videoModeBtn'), imageModeBtn: getEl('imageModeBtn'),
+                promptForm: getEl('prompt-form'), jsonOutput: getEl('json-output'),
+                saveJsonBtn: getEl('saveJsonBtn'), loadJsonBtn: getEl('loadJsonBtn'),
+                fileInput: getEl('file-input'), copyBtn: getEl('copyBtn'), fileNameInput: getEl('fileNameInput'),
+                scenesContainer: getEl('scenes-container'), addSceneBtn: getEl('addSceneBtn')
+            };
+            
+            // --- State ---
+            let generationMode = 'video';
+            let sceneIndex = 0;
+            window.threeInstances = {}; 
+
+            // --- 3D INTERFACE ---
+            function init3D(canvas, sIndex, initialData = {}) {
+                const scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x111827);
+
+                const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+                camera.position.z = 5;
+
+                const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+                renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+                scene.add(ambientLight);
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(2, 5, 3);
+                scene.add(directionalLight);
+
+                const geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+                const material = new THREE.MeshStandardMaterial({ color: 0x4f46e5, roughness: 0.5 });
+                const subject = new THREE.Mesh(geometry, material);
+                scene.add(subject);
+
+                const planeGeom = new THREE.PlaneGeometry(8, 4.5);
+                const planeMat = new THREE.MeshBasicMaterial({ color: 0x374151, side: THREE.DoubleSide, transparent: true, opacity: 0.3 });
+                const plane = new THREE.Mesh(planeGeom, planeMat);
+                plane.position.z = -2;
+                scene.add(plane);
+
+                const orbitControls = new OrbitControls(camera, renderer.domElement);
+                orbitControls.enableDamping = true;
+                
+                const startState = initialData.start;
+                if(startState?.position) subject.position.set(parseFloat(startState.position.x) || 0, parseFloat(startState.position.y) || 0, parseFloat(startState.position.z) || 0);
+                if(startState?.rotation) subject.rotation.set( (parseFloat(startState.rotation.x) || 0) * Math.PI / 180, (parseFloat(startState.rotation.y) || 0) * Math.PI / 180, (parseFloat(startState.rotation.z) || 0) * Math.PI / 180);
+                if(startState?.scale) subject.scale.set(parseFloat(startState.scale.x) || 1, parseFloat(startState.scale.y) || 1, parseFloat(startState.scale.z) || 1);
+
+                function animate() {
+                    requestAnimationFrame(animate);
+                    orbitControls.update();
+                    renderer.render(scene, camera);
+                }
+                animate();
+
+                window.threeInstances[sIndex] = { subject, orbitControls };
+            }
+
+            // --- UI & SCENE MANAGEMENT ---
+            const addScene = (sceneData = {}) => {
+                const sIndex = sceneIndex++;
+                const sceneEl = document.createElement('div');
+                sceneEl.className = 'scene-block p-4 space-y-6 bg-gray-900/40 rounded-lg relative';
+                sceneEl.id = `scene-${sIndex}`;
+
+                const artDirectionFields = visualData.artDirection.map(item => createDropdownField(item, `scenes[${sIndex}].art_direction`, sceneData.art_direction)).join('');
+                const cinematographyFields = visualData.cinematography.map(item => createDropdownField(item, `scenes[${sIndex}].cinematography`, sceneData.cinematography)).join('');
+                
+                const isVideo = generationMode === 'video';
+                
+                const positionSliders = ['x', 'y', 'z'].map(axis => `
+                    <div class="flex items-center gap-2">
+                        <label class="font-mono uppercase w-4">${axis}</label>
+                        <input type="range" class="transform-slider" min="-5" max="5" step="0.1" value="0" data-scene-index="${sIndex}" data-property="position" data-axis="${axis}">
+                    </div>
+                `).join('');
+
+                const rotationSliders = ['x', 'y', 'z'].map(axis => `
+                    <div class="flex items-center gap-2">
+                        <label class="font-mono uppercase w-4">${axis}</label>
+                        <input type="range" class="transform-slider" min="0" max="360" step="1" value="0" data-scene-index="${sIndex}" data-property="rotation" data-axis="${axis}">
+                    </div>
+                `).join('');
+
+                sceneEl.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xl font-bold text-purple-300">Scene #${sIndex + 1}</h3>
+                        <button type="button" class="text-sm text-red-400 hover:text-red-300 font-semibold" onclick="this.closest('.scene-block').remove(); delete window.threeInstances[${sIndex}]; updateJsonFromForm();">Remove</button>
+                    </div>
+                    
+                    <fieldset class="fieldset border border-gray-700 p-4 rounded-lg">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">🎬 Scene & Action</legend>
+                        <div class="space-y-4 mt-2">
+                            <div>
+                                <label for="scene-summary-${sIndex}" class="block mb-2 text-sm font-medium text-gray-300">Scene Summary</label>
+                                <textarea id="scene-summary-${sIndex}" data-path="scenes[${sIndex}].action.summary" rows="3" class="form-textarea w-full p-3" placeholder="A brief, high-level description of the entire action...">${sceneData.action?.summary || ''}</textarea>
+                            </div>
+                            <div id="characters-container-${sIndex}" class="space-y-4"></div>
+                            <button type="button" class="add-character-btn w-full text-sm bg-indigo-600/50 hover:bg-indigo-600/80 text-white font-medium py-2 px-4 rounded-lg transition" data-scene-index="${sIndex}">+ Add Character</button>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="fieldset border border-gray-700 p-4 rounded-lg">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">📍 Subject Transform</legend>
+                        <div class="space-y-4 mt-2">
+                            <canvas id="transform-canvas-${sIndex}" class="transform-canvas"></canvas>
+                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs p-2 rounded-lg bg-gray-900/50">
+                                <div class="transform-group">
+                                    <div class="flex items-center justify-center mb-2 gap-2"><h4 class="font-bold text-center text-gray-300">Position</h4><button type="button" class="reset-group-btn text-lg" data-scene-index="${sIndex}" data-property="position" title="Reset Position">⟲</button></div>
+                                    <div class="space-y-2">${positionSliders}</div>
+                                </div>
+                                <div class="transform-group">
+                                    <div class="flex items-center justify-center mb-2 gap-2"><h4 class="font-bold text-center text-gray-300">Rotation</h4><button type="button" class="reset-group-btn text-lg" data-scene-index="${sIndex}" data-property="rotation" title="Reset Rotation">⟲</button></div>
+                                    <div class="space-y-2">${rotationSliders}</div>
+                                </div>
+                                <div class="transform-group flex flex-col items-center">
+                                    <div class="flex items-center justify-center mb-2 gap-2"><h4 class="font-bold text-center text-gray-300">Scale</h4><button type="button" class="reset-group-btn text-lg" data-scene-index="${sIndex}" data-property="scale" title="Reset Scale">⟲</button></div>
+                                    <div class="w-full space-y-2"><div class="flex items-center gap-2"><label class="font-mono uppercase w-4">All</label><input type="range" class="transform-slider" min="0.1" max="3" step="0.05" value="1" data-scene-index="${sIndex}" data-property="scale"></div></div>
+                                </div>
+                            </div>
+                             <div class="flex justify-center gap-4 my-4">
+                                <button type="button" class="set-transform-btn p-2 text-sm rounded-md bg-blue-600" data-scene-index="${sIndex}" data-point="start">Set Start</button>
+                                <button type="button" class="set-transform-btn p-2 text-sm rounded-md bg-green-600" data-scene-index="${sIndex}" data-point="end">Set End</button>
+                                <button type="button" class="reset-all-btn p-2 text-sm rounded-md bg-red-600" data-scene-index="${sIndex}">Reset All</button>
+                                <button type="button" class="reset-view-btn p-2 text-sm rounded-md bg-gray-600" data-scene-index="${sIndex}">Reset View</button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-x-6 gap-y-4 text-xs">
+                                <!-- Start Point -->
+                                <div class="space-y-2 p-2 rounded bg-gray-900/50">
+                                    <h4 class="font-bold text-center text-blue-300">Start Point</h4>
+                                    <div class="space-y-1">
+                                        <label class="font-semibold text-gray-400">Position</label>
+                                        <div class="flex gap-1">
+                                            <input type="text" readonly data-path="scenes[${sIndex}].action.transform.start.position.x" class="form-input w-full p-1 text-center">
+                                            <input type="text" readonly data-path="scenes[${sIndex}].action.transform.start.position.y" class="form-input w-full p-1 text-center">
+                                            <input type="text" readonly data-path="scenes[${sIndex}].action.transform.start.position.z" class="form-input w-full p-1 text-center">
+                                        </div>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="font-semibold text-gray-400">Rotation (°)</label>
+                                        <div class="flex gap-1">
+                                            <input type="text" readonly data-path="scenes[${sIndex}].action.transform.start.rotation.x" class="form-input w-full p-1 text-center">
+                                            <input type="text" readonly data-path="scenes[${sIndex}].action.transform.start.rotation.y" class="form-input w-full p-1 text-center">
+                                            <input type="text" readonly data-path="scenes[${sIndex}].action.transform.start.rotation.z" class="form-input w-full p-1 text-center">
+                                        </div>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="font-semibold text-gray-400">Scale</label>
+                                        <div class="flex gap-1">
+                                            <input type="text" readonly data-path="scenes[${sIndex}].action.transform.start.scale.x" class="form-input w-full p-1 text-center">
+                                            <input type="text" readonly data-path="scenes[${sIndex}].action.transform.start.scale.y" class="form-input w-full p-1 text-center">
+                                            <input type="text" readonly data-path="scenes[${sIndex}].action.transform.start.scale.z" class="form-input w-full p-1 text-center">
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- End Point -->
+                                <div class="space-y-2 p-2 rounded bg-gray-900/50">
+                                    <h4 class="font-bold text-center text-green-300">End Point</h4>
+                                    <div class="space-y-1">
+                                        <label class="font-semibold text-gray-400">Position</label>
+                                        <div class="flex gap-1">
+                                            <input type="text" readonly data-path="scenes[${sIndex}].action.transform.end.position.x" class="form-input w-full p-1 text-center">
+                                            <input type="text" readonly data-path="scenes[${sIndex}].action.transform.end.position.y" class="form-input w-full p-1 text-center">
+                                            <input type="text" readonly data-path="scenes[${sIndex}].action.transform.end.position.z" class="form-input w-full p-1 text-center">
+                                        </div>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="font-semibold text-gray-400">Rotation (°)</label>
+                                        <div class="flex gap-1">
+                                            <input type="text" readonly data-path="scenes[${sIndex}].action.transform.end.rotation.x" class="form-input w-full p-1 text-center">
+                                            <input type="text" readonly data-path="scenes[${sIndex}].action.transform.end.rotation.y" class="form-input w-full p-1 text-center">
+                                            <input type="text" readonly data-path="scenes[${sIndex}].action.transform.end.rotation.z" class="form-input w-full p-1 text-center">
+                                        </div>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="font-semibold text-gray-400">Scale</label>
+                                        <div class="flex gap-1">
+                                            <input type="text" readonly data-path="scenes[${sIndex}].action.transform.end.scale.x" class="form-input w-full p-1 text-center">
+                                            <input type="text" readonly data-path="scenes[${sIndex}].action.transform.end.scale.y" class="form-input w-full p-1 text-center">
+                                            <input type="text" readonly data-path="scenes[${sIndex}].action.transform.end.scale.z" class="form-input w-full p-1 text-center">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+                    
+                    <fieldset class="dialogue-sound-section fieldset border border-gray-700 p-4 rounded-lg">
+                         <legend class="text-lg font-semibold text-gray-200 px-2">🗣️ Dialogue & Sound</legend>
+                        <div class="space-y-4 mt-2">
+                            <div>
+                                <label for="ambient-sound-${sIndex}" class="block mb-2 text-sm font-medium text-gray-300">Ambient Sound</label>
+                                <input type="text" id="ambient-sound-${sIndex}" data-path="scenes[${sIndex}].sound.ambient" class="form-input w-full p-3" placeholder="e.g., Heavy rain against glass, distant city hum..." value="${sceneData.sound?.ambient || ''}">
+                            </div>
+                            <div id="dialogue-lines-container-${sIndex}" class="space-y-4"></div>
+                            <button type="button" class="add-dialogue-btn w-full text-sm bg-indigo-600/50 hover:bg-indigo-600/80 text-white font-medium py-2 px-4 rounded-lg transition" data-scene-index="${sIndex}">+ Add Dialogue Line</button>
+                            <div id="sfx-container-${sIndex}" class="space-y-4 mt-4"></div>
+                            <button type="button" class="add-sfx-btn w-full text-sm bg-indigo-600/50 hover:bg-indigo-600/80 text-white font-medium py-2 px-4 rounded-lg transition mt-4" data-scene-index="${sIndex}">+ Add Sound Effect (SFX)</button>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="fieldset border border-gray-700 p-4 rounded-lg">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">🎨 Art Direction & Style</legend>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6 mt-4">${artDirectionFields}</div>
+                    </fieldset>
+                    
+                    <fieldset class="cinematography-section fieldset border border-gray-700 p-4 rounded-lg">
+                        <legend class="text-lg font-semibold text-gray-200 px-2">🎥 Cinematography</legend>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6 mt-4">${cinematographyFields}</div>
+                    </fieldset>
+                    
+                    <div class="video-specs-section ${!isVideo ? 'hidden' : ''}">
+                        <fieldset class="fieldset border border-gray-700 p-4 rounded-lg">
+                            <legend class="text-lg font-semibold text-gray-200 px-2">⚙️ Video Specs</legend>
+                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6 mt-4">
+                                <div>
+                                    <label for="duration-${sIndex}" class="block mb-2 text-sm font-medium text-gray-300">Duration</label>
+                                    <input type="text" id="duration-${sIndex}" data-path="scenes[${sIndex}].specs.duration" class="form-input w-full p-3" placeholder="e.g., 8s" value="${sceneData.specs?.duration || ''}">
+                                </div>
+                                 <div>
+                                    <label for="fps-${sIndex}" class="block mb-2 text-sm font-medium text-gray-300">FPS</label>
+                                    <input type="number" id="fps-${sIndex}" data-path="scenes[${sIndex}].specs.fps" class="form-input w-full p-3" placeholder="e.g., 24" value="${sceneData.specs?.fps || ''}">
+                                </div>
+                             </div>
+                        </fieldset>
+                    </div>
+                    <div class="image-specs-section ${isVideo ? 'hidden' : ''}">
+                         <fieldset class="fieldset border border-gray-700 p-4 rounded-lg">
+                            <legend class="text-lg font-semibold text-gray-200 px-2">⚙️ Image Specs</legend>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6 mt-4">
+                                <div>
+                                    <label for="image-aspect-ratio-${sIndex}" class="block mb-2 text-sm font-medium text-gray-300">Aspect Ratio</label>
+                                    <input type="text" id="image-aspect-ratio-${sIndex}" data-path="scenes[${sIndex}].specs.aspectRatio" class="form-input w-full p-3" placeholder="e.g., 16:9, 1:1" value="${sceneData.specs?.aspectRatio || ''}">
+                                </div>
+                            </div>
+                        </fieldset>
+                    </div>
+                `;
+                dom.scenesContainer.appendChild(sceneEl);
+                
+                const canvas = getEl(`transform-canvas-${sIndex}`);
+                init3D(canvas, sIndex, sceneData.action?.transform);
+
+                if (sceneData.action?.characters) sceneData.action.characters.forEach(charData => addCharacter(sIndex, charData));
+                if (sceneData.sound?.dialogue) sceneData.sound.dialogue.forEach(dialogueData => addDialogueLine(sIndex, dialogueData));
+                if (sceneData.sound?.sfx) sceneData.sound.sfx.forEach(sfxData => addSfx(sIndex, sfxData));
+            };
+
+            const addCharacter = (sIndex, data = {}) => {
+                const container = getEl(`characters-container-${sIndex}`);
+                const cIndex = container.children.length;
+                const div = document.createElement('div');
+                div.className = 'dynamic-item p-4 space-y-3 bg-gray-900/50 rounded-lg';
+                div.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <h4 class="font-semibold text-gray-300">Character #${cIndex + 1}</h4>
+                        <button type="button" class="text-xs text-red-400 hover:text-red-300" onclick="this.parentElement.parentElement.remove(); updateJsonFromForm();">Remove</button>
+                    </div>
+                    <input type="text" data-path="scenes[${sIndex}].action.characters[${cIndex}].name" class="form-input w-full p-2" placeholder="Character Name/ID (e.g., Detective Alves)" value="${data.name || ''}">
+                    <textarea data-path="scenes[${sIndex}].action.characters[${cIndex}].description" class="form-textarea w-full p-2" rows="2" placeholder="Description (e.g., Man in his 40s, tired eyes...)">${data.description || ''}</textarea>
+                    <textarea data-path="scenes[${sIndex}].action.characters[${cIndex}].action" class="form-textarea w-full p-2" rows="3" placeholder="Action (e.g., Sits at a desk, sips coffee...)">${data.action || ''}</textarea>
+                `;
+                container.appendChild(div);
+            };
+            
+            const addDialogueLine = (sIndex, data = {}) => {
+                const container = getEl(`dialogue-lines-container-${sIndex}`);
+                const dIndex = container.children.length;
+                const div = document.createElement('div');
+                div.className = 'dynamic-item p-4 space-y-3 bg-gray-900/50 rounded-lg';
+                div.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <h4 class="font-semibold text-gray-300">Dialogue Line #${dIndex + 1}</h4>
+                        <button type="button" class="text-xs text-red-400 hover:text-red-300" onclick="this.parentElement.parentElement.remove(); updateJsonFromForm();">Remove</button>
+                    </div>
+                    <input type="text" data-path="scenes[${sIndex}].sound.dialogue[${dIndex}].character" class="form-input w-full p-2" placeholder="Character Name" value="${data.character || ''}">
+                    <input type="text" data-path="scenes[${sIndex}].sound.dialogue[${dIndex}].line" class="form-input w-full p-2" placeholder="Line of dialogue" value="${data.line || ''}">
+                    <input type="text" data-path="scenes[${sIndex}].sound.dialogue[${dIndex}].delivery" class="form-input w-full p-2" placeholder="Delivery (e.g., Whispering, Shouting)" value="${data.delivery || ''}">
+                `;
+                container.appendChild(div);
+            };
+            
+            const addSfx = (sIndex, data = {}) => {
+                const container = getEl(`sfx-container-${sIndex}`);
+                const sfxIndex = container.children.length;
+                const div = document.createElement('div');
+                div.className = 'dynamic-item p-4 space-y-3 bg-gray-900/50 rounded-lg';
+                div.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <h4 class="font-semibold text-gray-300">Sound Effect #${sfxIndex + 1}</h4>
+                        <button type="button" class="text-xs text-red-400 hover:text-red-300" onclick="this.parentElement.parentElement.remove(); updateJsonFromForm();">Remove</button>
+                    </div>
+                    <input type="text" data-path="scenes[${sIndex}].sound.sfx[${sfxIndex}].time" class="form-input w-full p-2" placeholder="Time (e.g., 00:09)" value="${data.time || ''}">
+                    <input type="text" data-path="scenes[${sIndex}].sound.sfx[${sfxIndex}].effect" class="form-input w-full p-2" placeholder="SFX Description (e.g., Loud thunderclap)" value="${data.effect || ''}">
+                `;
+                container.appendChild(div);
+            };
+
+            const createDropdownField = (item, basePath, data = {}) => {
+                const fieldId = item.field.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                const path = `${basePath}.${fieldId}`;
+                const selectedValue = path.split('.').slice(2).reduce((o, k) => (o || {})[k], data) || '';
+                const options = item.dropdown.map(opt => `<option value="${opt}" ${opt === selectedValue ? 'selected' : ''}>${opt}</option>`).join('');
+                return `
+                    <div>
+                        <label class="block mb-2 text-sm font-medium text-gray-300">${item.field}</label>
+                        <select data-path="${path}" class="form-select w-full p-3 rounded-lg" onchange="updateJsonFromForm()">
+                            <option value="">Select...</option>
+                            ${options}
+                        </select>
+                    </div>`;
+            };
+            
+            const setGenerationMode = (newMode) => {
+                generationMode = newMode;
+                const isVideo = newMode === 'video';
+                dom.videoModeBtn.classList.toggle('active', isVideo);
+                dom.imageModeBtn.classList.toggle('active', !isVideo);
+                
+                document.querySelectorAll('.dialogue-sound-section, .cinematography-section, .video-specs-section').forEach(el => el.classList.toggle('hidden', !isVideo));
+                document.querySelectorAll('.image-specs-section').forEach(el => el.classList.toggle('hidden', isVideo));
+                
+                dom.addSceneBtn.classList.toggle('hidden', !isVideo);
+                if (!isVideo && dom.scenesContainer.children.length > 1) {
+                    while (dom.scenesContainer.children.length > 1) {
+                        dom.scenesContainer.lastChild.remove();
+                    }
+                }
+                updateJsonFromForm();
+            };
+
+            window.updateJsonFromForm = () => {
+                if (document.activeElement.id === 'json-output') return;
+                const data = {};
+                const formFields = Array.from(dom.promptForm.querySelectorAll('[data-path]'));
+                
+                const set = (obj, path, val) => {
+                    const keys = path.replace(/\[(\d+)\]/g, '.$1').split('.');
+                    keys.slice(0, -1).reduce((acc, key, i) => {
+                        if (!acc[key]) acc[key] = isNaN(parseInt(keys[i + 1])) ? {} : [];
+                        return acc[key];
+                    }, obj)[keys[keys.length - 1]] = val;
+                };
+
+                formFields.forEach(el => {
+                    if (el.closest('.hidden')) return;
+                    const path = el.dataset.path;
+                    const value = el.value.trim();
+                    if (value) set(data, path, value);
+                });
+                
+                if (data.scenes) {
+                    data.scenes = data.scenes.filter(Boolean);
+                    data.scenes.forEach(scene => {
+                        if (scene?.action?.characters) scene.action.characters = scene.action.characters.filter(Boolean);
+                        if (scene?.sound?.dialogue) scene.sound.dialogue = scene.sound.dialogue.filter(Boolean);
+                        if (scene?.sound?.sfx) scene.sound.sfx = scene.sound.sfx.filter(Boolean);
+                    });
+                }
+                
+                dom.jsonOutput.value = JSON.stringify(data, null, 2);
+            };
+
+            const populateUIFromData = (data) => {
+                dom.scenesContainer.innerHTML = '';
+                sceneIndex = 0;
+                if (data.scenes && Array.isArray(data.scenes)) {
+                    data.scenes.forEach(sceneData => addScene(sceneData));
+                } else {
+                    addScene();
+                }
+                updateJsonFromForm();
+            };
+
+            const updateFormFromJson = () => {
+                try {
+                    const data = JSON.parse(dom.jsonOutput.value);
+                    populateUIFromData(data);
+                } catch (e) { console.error("Invalid JSON:", e); }
+            };
+            
+            const saveJsonToFile = () => {
+                let fileName = dom.fileNameInput.value.trim() || "prompt.json";
+                if (!fileName.toLowerCase().endsWith('.json')) fileName += '.json';
+                const blob = new Blob([dom.jsonOutput.value], { type: 'application/json' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob); a.download = fileName;
+                a.click(); URL.revokeObjectURL(a.href); a.remove();
+            };
+
+            const loadJsonFromFile = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    dom.jsonOutput.value = e.target.result;
+                    updateFormFromJson();
+                };
+                reader.readAsText(file);
+                event.target.value = ''; 
+            };
+            
+            const copyJsonToClipboard = () => {
+                navigator.clipboard.writeText(dom.jsonOutput.value).then(() => {
+                    dom.copyBtn.textContent = "Copied!";
+                    setTimeout(() => { dom.copyBtn.textContent = "Copy JSON"; }, 2000);
+                });
+            };
+
+            const init = () => {
+                dom.promptForm.addEventListener('input', (e) => {
+                    if (e.target.matches('.transform-slider')) {
+                        const { property, axis } = e.target.dataset;
+                        const sIndex = e.target.dataset.sceneIndex;
+                        const instance = window.threeInstances[sIndex];
+                        if (!instance) return;
+                        
+                        const value = parseFloat(e.target.value);
+                        
+                        if (property === 'scale') {
+                            instance.subject.scale.set(value, value, value);
+                        } else if (property === 'rotation') {
+                            instance.subject.rotation[axis] = value * Math.PI / 180;
+                        } else {
+                            instance.subject.position[axis] = value;
+                        }
+                    }
+                    if(!e.target.matches('textarea')) {
+                        updateJsonFromForm();
+                    }
+                });
+                dom.promptForm.addEventListener('change', (e) => {
+                     if(e.target.matches('textarea')) {
+                        updateJsonFromForm();
+                    }
+                });
+
+                dom.jsonOutput.addEventListener('input', debounce(updateFormFromJson, 400));
+                
+                dom.addSceneBtn.addEventListener('click', () => addScene());
+                
+                dom.promptForm.addEventListener('click', (e) => {
+                    const target = e.target;
+                    const sIndex = target.dataset.sceneIndex;
+                    if (!sIndex) return;
+
+                    if (target.matches('.add-character-btn')) addCharacter(sIndex);
+                    else if (target.matches('.add-dialogue-btn')) addDialogueLine(sIndex);
+                    else if (target.matches('.add-sfx-btn')) addSfx(sIndex);
+                    else if (target.matches('.reset-view-btn')) {
+                        const instance = window.threeInstances[sIndex];
+                        if (instance) instance.orbitControls.reset();
+                    }
+                    else if (target.matches('.reset-all-btn')) {
+                        const instance = window.threeInstances[sIndex];
+                        if(instance) {
+                            instance.subject.position.set(0,0,0);
+                            instance.subject.rotation.set(0,0,0);
+                            instance.subject.scale.set(1,1,1);
+                            const sceneEl = getEl(`scene-${sIndex}`);
+                            sceneEl.querySelectorAll('.transform-slider').forEach(slider => {
+                                if(slider.dataset.property === 'scale') slider.value = 1;
+                                else slider.value = 0;
+                            });
+                        }
+                    }
+                    else if (target.matches('.reset-group-btn')) {
+                        const { property } = target.dataset;
+                        const instance = window.threeInstances[sIndex];
+                        if(instance) {
+                            const sceneEl = getEl(`scene-${sIndex}`);
+                            if(property === 'position') {
+                                instance.subject.position.set(0,0,0);
+                                sceneEl.querySelectorAll(`[data-property="position"]`).forEach(s => s.value = 0);
+                            } else if (property === 'rotation') {
+                                instance.subject.rotation.set(0,0,0);
+                                sceneEl.querySelectorAll(`[data-property="rotation"]`).forEach(s => s.value = 0);
+                            } else if (property === 'scale') {
+                                instance.subject.scale.set(1,1,1);
+                                sceneEl.querySelector(`[data-property="scale"]`).value = 1;
+                            }
+                        }
+                    }
+                    else if (target.matches('.set-transform-btn')) {
+                        const { point } = target.dataset;
+                        const { subject } = window.threeInstances[sIndex];
+                        const { position, rotation, scale } = subject;
+                        
+                        const p = { x: position.x.toFixed(2), y: position.y.toFixed(2), z: position.z.toFixed(2) };
+                        const r = { x: (rotation.x * 180 / Math.PI).toFixed(1), y: (rotation.y * 180 / Math.PI).toFixed(1), z: (rotation.z * 180 / Math.PI).toFixed(1) };
+                        const s = { x: scale.x.toFixed(2), y: scale.y.toFixed(2), z: scale.z.toFixed(2) };
+
+                        document.querySelector(`[data-path="scenes[${sIndex}].action.transform.${point}.position.x"]`).value = p.x;
+                        document.querySelector(`[data-path="scenes[${sIndex}].action.transform.${point}.position.y"]`).value = p.y;
+                        document.querySelector(`[data-path="scenes[${sIndex}].action.transform.${point}.position.z"]`).value = p.z;
+                        
+                        document.querySelector(`[data-path="scenes[${sIndex}].action.transform.${point}.rotation.x"]`).value = r.x;
+                        document.querySelector(`[data-path="scenes[${sIndex}].action.transform.${point}.rotation.y"]`).value = r.y;
+                        document.querySelector(`[data-path="scenes[${sIndex}].action.transform.${point}.rotation.z"]`).value = r.z;
+
+                        document.querySelector(`[data-path="scenes[${sIndex}].action.transform.${point}.scale.x"]`).value = s.x;
+                        document.querySelector(`[data-path="scenes[${sIndex}].action.transform.${point}.scale.y"]`).value = s.y;
+                        document.querySelector(`[data-path="scenes[${sIndex}].action.transform.${point}.scale.z"]`).value = s.z;
+                    }
+                    updateJsonFromForm();
+                });
+                
+                dom.videoModeBtn.addEventListener('click', () => setGenerationMode('video'));
+                dom.imageModeBtn.addEventListener('click', () => setGenerationMode('image'));
+                dom.saveJsonBtn.addEventListener('click', saveJsonToFile);
+                dom.loadJsonBtn.addEventListener('click', () => dom.fileInput.click());
+                dom.fileInput.addEventListener('change', loadJsonFromFile);
+                dom.copyBtn.addEventListener('click', copyJsonToClipboard);
+                
+                addScene();
+                setGenerationMode('video');
+                updateJsonFromForm();
+            };
+            
+            const debounce = (func, delay) => {
+                let timeout;
+                return (...args) => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), delay);
+                };
+            };
+
+            init();
+        });
+    </script>
+</body>
+</html>
